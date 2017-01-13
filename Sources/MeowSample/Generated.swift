@@ -1,11 +1,11 @@
-// Generated using Sourcery 0.5.2 — https://github.com/krzysztofzablocki/Sourcery
+// Generated using Sourcery 0.5.3 — https://github.com/krzysztofzablocki/Sourcery
 // DO NOT EDIT
 
 
 import HTTP
 import Vapor
 import Foundation
-import Flow
+import MeowVapor
 
 
 
@@ -42,13 +42,14 @@ extension Dog : ConcreteSerializable {
   }
 
   convenience init(fromDocument source: Document) throws {
+    var source = source
       // Extract all properties
       
         // loop: id
 
         
           
-            let idValue: ObjectId = try Meow.Helpers.requireValue(source["_id"], keyForError: "id")
+            let idValue: ObjectId = try Meow.Helpers.requireValue(source.removeValue(forKey: "_id") as? ObjectId, keyForError: "id")
         
       
      
@@ -58,7 +59,7 @@ extension Dog : ConcreteSerializable {
           
              // The property is a BSON type, so we can just extract it from the document:
              
-                  let nameValue: String = try Meow.Helpers.requireValue(source["name"], keyForError: "name")
+                  let nameValue: String = try Meow.Helpers.requireValue(source.removeValue(forKey: "name") as? String, keyForError: "name")
              
           
       
@@ -69,7 +70,7 @@ extension Dog : ConcreteSerializable {
           
           
               let preferencesValue: Preferences?
-              if let preferencesDocument: Document = source["preferences"] {
+              if let preferencesDocument: Document = source.removeValue(forKey: "preferences") as? Document {
                 preferencesValue = try Preferences(fromDocument: preferencesDocument)
               } else {
                 preferencesValue = nil
@@ -86,11 +87,17 @@ extension Dog : ConcreteSerializable {
       )
 
       
-        self.id = idValue
+        
+          self.id = idValue
+        
       
-        self.name = nameValue
+        
+          self.name = nameValue
+        
       
-        self.preferences = preferencesValue
+        
+          self.preferences = preferencesValue
+        
       
   }
 
@@ -162,13 +169,14 @@ extension Flat : ConcreteSerializable {
   }
 
   convenience init(fromDocument source: Document) throws {
+    var source = source
       // Extract all properties
       
         // loop: id
 
         
           
-            let idValue: ObjectId = try Meow.Helpers.requireValue(source["_id"], keyForError: "id")
+            let idValue: ObjectId = try Meow.Helpers.requireValue(source.removeValue(forKey: "_id") as? ObjectId, keyForError: "id")
         
       
      
@@ -177,7 +185,7 @@ extension Flat : ConcreteSerializable {
         
           
             // o the noes it is a reference
-            let ownersIds = try Meow.Helpers.requireValue(source["owners"] as Document?, keyForError: "owners").arrayValue
+            let ownersIds = try Meow.Helpers.requireValue(source.removeValue(forKey: "owners") as? Document, keyForError: "owners").arrayValue
             let ownersValue: [Reference<User, Cascade>]
 
             
@@ -196,9 +204,13 @@ extension Flat : ConcreteSerializable {
       )
 
       
-        self.id = idValue
+        
+          self.id = idValue
+        
       
-        self.owners = ownersValue
+        
+          self.owners = ownersValue
+        
       
   }
 
@@ -262,13 +274,14 @@ extension House : ConcreteSerializable {
   }
 
   convenience init(fromDocument source: Document) throws {
+    var source = source
       // Extract all properties
       
         // loop: id
 
         
           
-            let idValue: ObjectId = try Meow.Helpers.requireValue(source["_id"], keyForError: "id")
+            let idValue: ObjectId = try Meow.Helpers.requireValue(source.removeValue(forKey: "_id") as? ObjectId, keyForError: "id")
         
       
      
@@ -277,7 +290,7 @@ extension House : ConcreteSerializable {
         
           
              // o the noes it is a reference
-             let ownerId: ObjectId? = source["owner"]
+             let ownerId: ObjectId? = source.removeValue(forKey: "owner") as? ObjectId
              let ownerValue: Reference<User, Deny>?
 
              
@@ -298,9 +311,13 @@ extension House : ConcreteSerializable {
       )
 
       
-        self.id = idValue
+        
+          self.id = idValue
+        
       
-        self.owner = ownerValue
+        
+          self.owner = ownerValue
+        
       
   }
 
@@ -353,7 +370,14 @@ extension User : ConcreteSerializable {
       
 
       
+        doc += self.additionalFields
+      
 
+      
+        // additionalFields: Document (Document)
+        
+          
+        
       
         // id: ObjectId (ObjectId)
         
@@ -421,13 +445,20 @@ extension User : ConcreteSerializable {
   }
 
   convenience init(fromDocument source: Document) throws {
+    var source = source
       // Extract all properties
       
+        // loop: additionalFields
+
+        
+          
+      
+     
         // loop: id
 
         
           
-            let idValue: ObjectId = try Meow.Helpers.requireValue(source["_id"], keyForError: "id")
+            let idValue: ObjectId = try Meow.Helpers.requireValue(source.removeValue(forKey: "_id") as? ObjectId, keyForError: "id")
         
       
      
@@ -437,7 +468,7 @@ extension User : ConcreteSerializable {
           
              // The property is a BSON type, so we can just extract it from the document:
              
-                  let emailValue: String = try Meow.Helpers.requireValue(source["email"], keyForError: "email")
+                  let emailValue: String = try Meow.Helpers.requireValue(source.removeValue(forKey: "email") as? String, keyForError: "email")
              
           
       
@@ -448,7 +479,7 @@ extension User : ConcreteSerializable {
           
              // The property is a BSON type, so we can just extract it from the document:
              
-                  let firstNameValue: String? = source["firstName"]
+                  let firstNameValue: String? = source.removeValue(forKey: "firstName") as? String
              
           
       
@@ -459,7 +490,7 @@ extension User : ConcreteSerializable {
           
              // The property is a BSON type, so we can just extract it from the document:
              
-                  let lastNameValue: String? = source["lastName"]
+                  let lastNameValue: String? = source.removeValue(forKey: "lastName") as? String
              
           
       
@@ -470,7 +501,7 @@ extension User : ConcreteSerializable {
           
              // The property is a BSON type, so we can just extract it from the document:
              
-                  let passwordHashValue: Data? = source["passwordHash"]
+                  let passwordHashValue: Data? = source.removeValue(forKey: "passwordHash") as? Data
              
           
       
@@ -481,7 +512,7 @@ extension User : ConcreteSerializable {
           
              // The property is a BSON type, so we can just extract it from the document:
              
-                  let registrationDateValue: Date = try Meow.Helpers.requireValue(source["registrationDate"], keyForError: "registrationDate")
+                  let registrationDateValue: Date = try Meow.Helpers.requireValue(source.removeValue(forKey: "registrationDate") as? Date, keyForError: "registrationDate")
              
           
       
@@ -491,7 +522,7 @@ extension User : ConcreteSerializable {
         
           
           
-              let preferencesDocument: Document = try Meow.Helpers.requireValue(source["preferences"], keyForError: "preferences")
+              let preferencesDocument: Document = try Meow.Helpers.requireValue(source.removeValue(forKey: "preferences") as? Document, keyForError: "preferences")
               let preferencesValue: Preferences = try Preferences(fromDocument: preferencesDocument)
           
         
@@ -502,7 +533,7 @@ extension User : ConcreteSerializable {
         
           
              // o the noes it is a reference
-             let petId: ObjectId? = source["pet"]
+             let petId: ObjectId? = source.removeValue(forKey: "pet") as? ObjectId
              let petValue: Reference<Dog, Cascade>
 
              
@@ -516,7 +547,7 @@ extension User : ConcreteSerializable {
         
           
              // o the noes it is a reference
-             let bossId: ObjectId? = source["boss"]
+             let bossId: ObjectId? = source.removeValue(forKey: "boss") as? ObjectId
              let bossValue: Reference<User, Ignore>?
 
              
@@ -540,29 +571,56 @@ extension User : ConcreteSerializable {
       )
 
       
-        self.id = idValue
+        
+          self.additionalFields = source
+        
       
-        self.email = emailValue
+        
+          self.id = idValue
+        
       
-        self.firstName = firstNameValue
+        
+          self.email = emailValue
+        
       
-        self.lastName = lastNameValue
+        
+          self.firstName = firstNameValue
+        
       
-        self.passwordHash = passwordHashValue
+        
+          self.lastName = lastNameValue
+        
       
-        self.registrationDate = registrationDateValue
+        
+          self.passwordHash = passwordHashValue
+        
       
-        self.preferences = preferencesValue
+        
+          self.registrationDate = registrationDateValue
+        
       
-        self.pet = petValue
+        
+          self.preferences = preferencesValue
+        
       
-        self.boss = bossValue
+        
+          self.pet = petValue
+        
+      
+        
+          self.boss = bossValue
+        
       
   }
 
   struct VirtualInstance {
     var keyPrefix: String
 
+    
+      // additionalFields: Document
+      
+        // Variable: name = additionalFields, typeName = Document, isComputed = false, isStatic = false, readAccess = internal, writeAccess = internal, annotations = [:], attributes = [:]
+      
     
       // id: ObjectId
       
@@ -635,6 +693,8 @@ extension User : ConcreteSerializable {
         
       
         
+      
+        
           
             let petValue = self.pet
           
@@ -678,6 +738,7 @@ extension Preferences : ConcreteSerializable {
   }
 
   convenience init(fromDocument source: Document) throws {
+    var source = source
       // Extract all properties
       
         // loop: likesCheese
@@ -686,7 +747,7 @@ extension Preferences : ConcreteSerializable {
           
              // The property is a BSON type, so we can just extract it from the document:
              
-                  let likesCheeseValue: Bool = try Meow.Helpers.requireValue(source["likesCheese"], keyForError: "likesCheese")
+                  let likesCheeseValue: Bool = try Meow.Helpers.requireValue(source.removeValue(forKey: "likesCheese") as? Bool, keyForError: "likesCheese")
              
           
       
@@ -699,7 +760,9 @@ extension Preferences : ConcreteSerializable {
       )
 
       
-        self.likesCheese = likesCheeseValue
+        
+          self.likesCheese = likesCheeseValue
+        
       
   }
 
@@ -910,6 +973,60 @@ extension Droplet {
     
       
         
+          self.get("users", User.self, "customFieldUpdate") { request, model in
+        
+
+        
+          
+            guard let query = request.query, case .object(let parameters) = query else {
+                return Response(status: .badRequest)
+            }
+          
+
+          
+            
+
+              
+                guard let key = parameters["key"]?.string else {
+                  return Response(status: .badRequest)
+                }
+              
+            
+          
+            
+
+              
+                guard let value = parameters["value"]?.string else {
+                  return Response(status: .badRequest)
+                }
+              
+            
+          
+        
+
+        
+
+        
+        // TODO: Reverse isVoid when that works
+           try model.customFieldUpdate(
+            
+              key: key
+              
+              ,
+              
+            
+              value: value
+              
+            
+          )
+
+            
+              return Response(status: .ok)
+            
+          
+          }
+      
+        
           self.get("users", User.self, "update") { request, model in
         
 
@@ -950,7 +1067,7 @@ extension Droplet {
 
         
         // TODO: Reverse isVoid when that works
-           let responseObject =  try model.update(
+           try model.update(
             
               email: email
               
@@ -1011,6 +1128,26 @@ extension Droplet {
             return responseObject
           
         
+          }
+      
+        
+          self.get("users", User.self, "get") { request, model in
+        
+
+        
+
+        
+
+        
+        // TODO: Reverse isVoid when that works
+           let responseObject =  try model.get(
+            
+          )
+
+            
+              return responseObject
+            
+          
           }
       
         

@@ -1,4 +1,4 @@
-import Flow
+import MeowVapor
 import Foundation
 
 final class House : Model {
@@ -7,7 +7,8 @@ final class House : Model {
     var owner: Reference<User, Deny>?
 }
 
-final class User : Model {
+final class User : Model, DynamicSerializable {
+    var additionalFields = Document()
     var id = ObjectId()
     
     var email: String
@@ -18,6 +19,12 @@ final class User : Model {
     var preferences = Preferences()
     var pet: Reference<Dog, Cascade>
     var boss: Reference<User, Ignore>?
+    
+    // sourcery: api=get,data=query,permissions=anonymous
+    func customFieldUpdate(key: String, value: String) throws {
+        self.additionalFields[key] = value
+        try self.save()
+    }
     
     // sourcery: api=get,data=query,permissions=anonymous
     func update(email: String, firstName: String? = nil, lastName: String? = nil) throws {
@@ -40,6 +47,11 @@ final class User : Model {
         try user.save()
         
         return user
+    }
+    
+    // sourcery: api=get,permissions=anonymous
+    func get() throws -> User {
+        return self
     }
     
     // sourcery: api=get,permissions=anonymous

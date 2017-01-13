@@ -1,7 +1,7 @@
 import HTTP
 import Vapor
 import Foundation
-import Flow
+import MeowVapor
 
 <%
 let serializables = (types.based["Model"] ?? []) + (types.based["Embeddable"] ?? [])
@@ -59,6 +59,7 @@ extension <%= type.name %> : ConcreteSerializable {
   }
 
   convenience init(fromDocument source: Document) throws {
+    var source = source
       // Extract all properties
       <% for variable in type.variables { %>
         // loop: <%= variable.name %>
@@ -75,13 +76,13 @@ extension <%= type.name %> : ConcreteSerializable {
              || variable.typeName.unwrappedTypeName == "[Int]" { %>
              // The property is a BSON type, so we can just extract it from the document:
              <% if variable.typeName.isOptional { %>
-                  let <%=variable.name%>Value: <%=variable.typeName%> = source["<%=variable.name%>"]
+                  let <%=variable.name%>Value: <%=variable.typeName%> = source.removeValue(forKey: "<%=variable.name%>") as? <%=variable.typeName.unwrappedTypeName%>
              <% } else { %>
-                  let <%=variable.name%>Value: <%=variable.typeName%> = try Meow.Helpers.requireValue(source["<%=variable.name%>"], keyForError: "<%=variable.name%>")
+                  let <%=variable.name%>Value: <%=variable.typeName%> = try Meow.Helpers.requireValue(source.removeValue(forKey: "<%=variable.name%>") as? <%=variable.typeName%>, keyForError: "<%=variable.name%>")
              <% } %>
           <% } else if variable.typeName.name.hasPrefix("[Reference") { %>
             // o the noes it is a reference
-            let <%=variable.name%>Ids = try Meow.Helpers.requireValue(source["<%=variable.name%>"] as Document?, keyForError: "<%=variable.name%>").arrayValue
+            let <%=variable.name%>Ids = try Meow.Helpers.requireValue(source.removeValue(forKey: "<%=variable.name%>") as? Document, keyForError: "<%=variable.name%>").arrayValue
             let <%=variable.name%>Value: <%=variable.typeName%>
 
             <% if variable.typeName.isOptional { %>
@@ -108,13 +109,13 @@ extension <%= type.name %> : ConcreteSerializable {
              || variable.typeName.unwrappedTypeName == "Int" { %>
              // The property is a BSON type, so we can just extract it from the document:
              <% if variable.typeName.isOptional { %>
-                  let <%=variable.name%>Value: <%=variable.typeName%> = source["<%=variable.name%>"]
+                  let <%=variable.name%>Value: <%=variable.typeName%> = source.removeValue(forKey: "<%=variable.name%>") as? <%=variable.typeName.unwrappedTypeName%>
              <% } else { %>
-                  let <%=variable.name%>Value: <%=variable.typeName%> = try Meow.Helpers.requireValue(source["<%=variable.name%>"], keyForError: "<%=variable.name%>")
+                  let <%=variable.name%>Value: <%=variable.typeName%> = try Meow.Helpers.requireValue(source.removeValue(forKey: "<%=variable.name%>") as? <%=variable.typeName%>, keyForError: "<%=variable.name%>")
              <% } %>
           <% } else if variable.typeName.name.hasPrefix("Reference") { %>
              // o the noes it is a reference
-             let <%=variable.name%>Id: ObjectId? = source["<%=variable.name%>"]
+             let <%=variable.name%>Id: ObjectId? = source.removeValue(forKey: "<%=variable.name%>") as? ObjectId
              let <%=variable.name%>Value: <%=variable.typeName%>
 
              <% if variable.typeName.isOptional { %>
@@ -129,17 +130,17 @@ extension <%= type.name %> : ConcreteSerializable {
         <% } else if variable.type?.based["Embeddable"] != nil { %>
           <% if variable.typeName.isOptional { %>
               let <%=variable.name%>Value: <%=variable.typeName%>
-              if let <%=variable.name%>Document: Document = source["<%=variable.name%>"] {
+              if let <%=variable.name%>Document: Document = source.removeValue(forKey: "<%=variable.name%>") as? Document {
                 <%=variable.name%>Value = try <%=variable.typeName.unwrappedTypeName%>(fromDocument: <%=variable.name%>Document)
               } else {
                 <%=variable.name%>Value = nil
               }
           <% } else { %>
-              let <%=variable.name%>Document: Document = try Meow.Helpers.requireValue(source["<%=variable.name%>"], keyForError: "<%=variable.name%>")
+              let <%=variable.name%>Document: Document = try Meow.Helpers.requireValue(source.removeValue(forKey: "<%=variable.name%>") as? Document, keyForError: "<%=variable.name%>")
               let <%=variable.name%>Value: <%=variable.typeName%> = try <%=variable.typeName%>(fromDocument: <%=variable.name%>Document)
           <% } %>
         <% } else if variable.name == "id" { %>
-            let idValue: ObjectId = try Meow.Helpers.requireValue(source["_id"], keyForError: "id")
+            let idValue: ObjectId = try Meow.Helpers.requireValue(source.removeValue(forKey: "_id") as? ObjectId, keyForError: "id")
         <% } %>
       <% } %>
      <% } %>
@@ -156,7 +157,11 @@ extension <%= type.name %> : ConcreteSerializable {
       )
 
       <% for variable in type.variables { %>
-        self.<%=variable.name%> = <%=variable.name%>Value
+        <% if type.based["DynamicSerializable"] != nil && variable.name == "additionalFields" { %>
+          self.additionalFields = source
+        <% } else { %>
+          self.<%=variable.name%> = <%=variable.name%>Value
+        <% } %>
       <% } %>
   }
 

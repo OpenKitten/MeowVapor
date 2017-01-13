@@ -1,13 +1,11 @@
 import HTTP
-import Flow
+import MeowVapor
 import Vapor
-import FlowTemplating
+import MeowVaporTemplating
 
 let drop = Droplet()
-try Meow.init("mongodb://localhost/kaas")
 
-let stem = FlowTemplating.Stem(workingDirectory: "/Users/joannis/Desktop/")
-
+let stem = MeowVaporTemplating.Stem(workingDirectory: "/Users/joannis/Desktop/")
 
 drop.get("populate") { req in
     for _ in 0..<1000 {

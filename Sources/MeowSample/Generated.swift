@@ -16,6 +16,8 @@ extension Dog : ConcreteSerializable {
       
 
       
+
+      
         // id: ObjectId (ObjectId)
         
           
@@ -140,6 +142,8 @@ extension Flat : ConcreteSerializable {
       
 
       
+
+      
         // id: ObjectId (ObjectId)
         
           
@@ -236,6 +240,8 @@ extension House : ConcreteSerializable {
   func meowSerialize() -> Document {
       
         var doc: Document = ["_id": self.id]
+      
+
       
 
       
@@ -344,6 +350,8 @@ extension User : ConcreteSerializable {
   func meowSerialize() -> Document {
       
         var doc: Document = ["_id": self.id]
+      
+
       
 
       
@@ -653,6 +661,8 @@ extension Preferences : ConcreteSerializable {
   func meowSerialize() -> Document {
       
       var doc = Document()
+      
+
       
 
       

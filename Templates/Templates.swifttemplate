@@ -15,7 +15,7 @@ extension <%= type.name %> : ConcreteSerializable {
       var doc = Document()
       <% } %>
 
-      <% if types.based["Embeddable"] { %>
+      <% if type.based["DynamicSerializable"] != nil { %>
         doc += self.additionalFields
       <% } %>
 

@@ -1,7 +1,7 @@
 import PackageDescription
 
 let package = Package(
-    name: "Flow",
+    name: "MeowVapor",
     targets: [
         Target(name: "MeowVaporTemplating"),
         Target(name: "MeowVapor", dependencies: ["MeowVaporTemplating"]),

@@ -35,7 +35,7 @@ final class Tutorial: Model {
     
     // sourcery: api=delete,permissions=anonymous
     func remove() throws {
-        try self.remove()
+        try self.delete()
     }
     
     init(named name: String, author: String, url: String, image: String?) {

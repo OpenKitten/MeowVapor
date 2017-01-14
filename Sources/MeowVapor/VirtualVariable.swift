@@ -9,6 +9,10 @@
 import Foundation
 import MongoKitten
 
+#if os(Linux)
+    typealias RegularExpression = NSRegularExpression
+#endif
+
 public protocol VirtualVariable {
     var name: String { get }
 }

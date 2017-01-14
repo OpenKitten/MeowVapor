@@ -12,6 +12,7 @@ final class Tutorial: Model {
     var duration: Int = 0
     var difficulty: Difficulty = .easy
     var exists: Bool = false
+    var l1_inverter_min_v_alert: Double?
     
     // sourcery: api=get,pathSuffix=/,permissions=anonymous
     static func list() throws -> Cursor<Tutorial> {

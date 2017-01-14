@@ -10,6 +10,8 @@ import MeowVapor
 
 
 
+
+
   
     // Optional(String)
     extension Difficulty : ConcreteSingleValueSerializable {
@@ -27,6 +29,7 @@ import MeowVapor
       struct VirtualInstance {
         var keyPrefix: String
 
+        
         
 
         init(keyPrefix: String = "") {
@@ -54,6 +57,7 @@ import MeowVapor
         var keyPrefix: String
 
         
+        
 
         init(keyPrefix: String = "") {
           self.keyPrefix = keyPrefix
@@ -73,11 +77,14 @@ extension Tutorial : ConcreteSerializable {
     
 
     
+    
+      
       // id: ObjectId (ObjectId)
       
         
       
     
+      
       // name: String (String)
       
         
@@ -85,6 +92,7 @@ extension Tutorial : ConcreteSerializable {
         
       
     
+      
       // author: String (String)
       
         
@@ -92,6 +100,7 @@ extension Tutorial : ConcreteSerializable {
         
       
     
+      
       // medium: Medium (Medium)
       
         
@@ -99,6 +108,7 @@ extension Tutorial : ConcreteSerializable {
         
       
     
+      
       // image: String (String)
       
         
@@ -106,6 +116,7 @@ extension Tutorial : ConcreteSerializable {
         
       
     
+      
       // url: String (String)
       
         
@@ -113,6 +124,7 @@ extension Tutorial : ConcreteSerializable {
         
       
     
+      
       // description: String (String)
       
         
@@ -120,6 +132,7 @@ extension Tutorial : ConcreteSerializable {
         
       
     
+      
       // duration: Int (Int)
       
         
@@ -127,6 +140,7 @@ extension Tutorial : ConcreteSerializable {
         
       
     
+      
       // difficulty: Difficulty (Difficulty)
       
         
@@ -134,10 +148,19 @@ extension Tutorial : ConcreteSerializable {
         
       
     
+      
       // exists: Bool (Bool)
       
         
           doc["exists"] = self.exists
+        
+      
+    
+      
+      // l1_inverter_min_v_alert: Double? (Double)
+      
+        
+          doc["l1_inverter_min_v_alert"] = self.l1_inverter_min_v_alert
         
       
     
@@ -149,6 +172,8 @@ extension Tutorial : ConcreteSerializable {
     var source = source
       // Extract all properties
       
+      
+        
         // loop: id
 
         
@@ -157,6 +182,7 @@ extension Tutorial : ConcreteSerializable {
         
       
      
+        
         // loop: name
 
         
@@ -168,6 +194,7 @@ extension Tutorial : ConcreteSerializable {
           
       
      
+        
         // loop: author
 
         
@@ -179,6 +206,7 @@ extension Tutorial : ConcreteSerializable {
           
       
      
+        
         // loop: medium
 
         
@@ -192,6 +220,7 @@ extension Tutorial : ConcreteSerializable {
         
       
      
+        
         // loop: image
 
         
@@ -203,6 +232,7 @@ extension Tutorial : ConcreteSerializable {
           
       
      
+        
         // loop: url
 
         
@@ -214,6 +244,7 @@ extension Tutorial : ConcreteSerializable {
           
       
      
+        
         // loop: description
 
         
@@ -225,6 +256,7 @@ extension Tutorial : ConcreteSerializable {
           
       
      
+        
         // loop: duration
 
         
@@ -236,6 +268,7 @@ extension Tutorial : ConcreteSerializable {
           
       
      
+        
         // loop: difficulty
 
         
@@ -249,6 +282,7 @@ extension Tutorial : ConcreteSerializable {
         
       
      
+        
         // loop: exists
 
         
@@ -256,6 +290,18 @@ extension Tutorial : ConcreteSerializable {
              // The property is a BSON type, so we can just extract it from the document:
              
                   let existsValue: Bool = try Meow.Helpers.requireValue(source.removeValue(forKey: "exists") as? Bool, keyForError: "exists")
+             
+          
+      
+     
+        
+        // loop: l1_inverter_min_v_alert
+
+        
+          
+             // The property is a BSON type, so we can just extract it from the document:
+             
+                  let l1_inverter_min_v_alertValue: Double? = source.removeValue(forKey: "l1_inverter_min_v_alert") as? Double
              
           
       
@@ -286,44 +332,60 @@ extension Tutorial : ConcreteSerializable {
       )
 
       
+      
+        
         
           self.id = idValue
         
       
         
+        
           self.name = nameValue
         
       
+        
         
           self.author = authorValue
         
       
         
+        
           self.medium = mediumValue
         
       
+        
         
           self.image = imageValue
         
       
         
+        
           self.url = urlValue
         
       
+        
         
           self.description = descriptionValue
         
       
         
+        
           self.duration = durationValue
         
       
+        
         
           self.difficulty = difficultyValue
         
       
         
+        
           self.exists = existsValue
+        
+      
+        
+        
+          self.l1_inverter_min_v_alert = l1_inverter_min_v_alertValue
         
       
   }
@@ -332,54 +394,71 @@ extension Tutorial : ConcreteSerializable {
     var keyPrefix: String
 
     
+    
+      
       // id: ObjectId
       
         var id: VirtualObjectId { return VirtualObjectId(name: keyPrefix + "id") }
       
     
+      
       // name: String
       
         var name: VirtualString { return VirtualString(name: keyPrefix + "name") }
       
     
+      
       // author: String
       
         var author: VirtualString { return VirtualString(name: keyPrefix + "author") }
       
     
+      
       // medium: Medium
       
         var medium: Medium.VirtualInstance { return Medium.VirtualInstance(keyPrefix: "medium.") }
       
     
+      
       // image: String
       
         var image: VirtualString { return VirtualString(name: keyPrefix + "image") }
       
     
+      
       // url: String
       
         var url: VirtualString { return VirtualString(name: keyPrefix + "url") }
       
     
+      
       // description: String
       
         var description: VirtualString { return VirtualString(name: keyPrefix + "description") }
       
     
+      
       // duration: Int
       
         var duration: VirtualNumber { return VirtualNumber(name: keyPrefix + "duration") }
       
     
+      
       // difficulty: Difficulty
       
         var difficulty: Difficulty.VirtualInstance { return Difficulty.VirtualInstance(keyPrefix: "difficulty.") }
       
     
+      
       // exists: Bool
       
         var exists: VirtualBool { return VirtualBool(name: keyPrefix + "exists") }
+      
+    
+      
+      // l1_inverter_min_v_alert: Double?
+      
+        var l1_inverter_min_v_alert: VirtualNumber { return VirtualNumber(name: keyPrefix + "l1_inverter_min_v_alert") }
       
     
 
@@ -393,24 +472,38 @@ extension Tutorial : ConcreteSerializable {
       _ = result.popLast() // to silence the warning of not mutating above variable in the case of a type with no references
 
       
+      
+        
         
       
         
-      
         
       
         
-      
         
       
         
-      
         
       
         
-      
         
       
+        
+        
+      
+        
+        
+      
+        
+        
+      
+        
+        
+      
+        
+        
+      
+        
         
       
 
@@ -467,6 +560,180 @@ extension Droplet {
     let meow = try Meow.init(mongoURL)
 
     
+      
+        
+          self.get("tutorials", "/") { request in
+        
+
+        
+
+        
+
+        
+        // TODO: Reverse isVoid when that works
+           let responseObject = try Tutorial.list(
+            
+          )
+
+          
+            return responseObject
+          
+        
+          }
+      
+        
+          self.get("tutorials", "filtered") { request in
+        
+
+        
+          
+            guard let query = request.query, case .object(let parameters) = query else {
+                return Response(status: .badRequest)
+            }
+          
+
+          
+            
+
+              
+                guard let minDuration = parameters["minDuration"]?.int else {
+                  return Response(status: .badRequest)
+                }
+              
+            
+          
+            
+
+              
+                guard let maxDuration = parameters["maxDuration"]?.int else {
+                  return Response(status: .badRequest)
+                }
+              
+            
+          
+        
+
+        
+
+        
+        // TODO: Reverse isVoid when that works
+           let responseObject = try Tutorial.list(
+            
+              minDuration: minDuration
+              
+              ,
+              
+            
+              maxDuration: maxDuration
+              
+            
+          )
+
+          
+            return responseObject
+          
+        
+          }
+      
+        
+          self.post("tutorials", "/") { request in
+        
+
+        
+          
+            guard let json = request.json?.node, case .object(let parameters) = json else {
+                return Response(status: .badRequest)
+            }
+          
+
+          
+            
+
+              
+                guard let name = parameters["name"]?.string else {
+                  return Response(status: .badRequest)
+                }
+              
+            
+          
+            
+
+              
+                guard let author = parameters["author"]?.string else {
+                  return Response(status: .badRequest)
+                }
+              
+            
+          
+            
+
+              
+                guard let url = parameters["url"]?.string else {
+                  return Response(status: .badRequest)
+                }
+              
+            
+          
+            
+              
+                let image = parameters["image"]?.string
+              
+
+            
+          
+        
+
+        
+
+        
+        // TODO: Reverse isVoid when that works
+           let responseObject = try Tutorial.create(
+            
+              name: name
+              
+              ,
+              
+            
+              author: author
+              
+              ,
+              
+            
+              url: url
+              
+              ,
+              
+            
+              image: image
+              
+            
+          )
+
+          
+            return responseObject
+          
+        
+          }
+      
+        
+          self.delete("tutorials", Tutorial.self, "/") { request, model in
+        
+
+        
+
+        
+
+        
+        // TODO: Reverse isVoid when that works
+           try model.remove(
+            
+          )
+
+            
+              return Response(status: .ok)
+            
+          
+          }
       
         
           self.get("tutorials", "/") { request in

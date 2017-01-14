@@ -7,6 +7,8 @@ import MeowVapor
 let serializables = (types.classes.based["Model"] ?? []) + (types.classes.based["Embeddable"] ?? [])
 %>
 
+<% var usedNames = [String]() %>
+
 <% for type in types.enums { %>
   <% if type.based["Embeddable"] != nil && type.rawTypeName != nil { %>
     // <%= type.rawTypeName %>
@@ -108,7 +110,9 @@ extension <%= type.name %> : ConcreteSerializable {
   convenience init(fromDocument source: Document) throws {
     var source = source
       // Extract all properties
-      <% for variable in type.variables { %>
+      <% usedNames = [] %>
+      <% for variable in type.variables where !usedNames.contains(variable.name) { %>
+        <% usedNames.append(variable.name) %>
         // loop: <%= variable.name %>
 
         <% if variable.typeName.unwrappedTypeName.hasPrefix("[") && variable.typeName.unwrappedTypeName.hasSuffix("]") { %>
@@ -213,7 +217,9 @@ extension <%= type.name %> : ConcreteSerializable {
         <% } %>
       )
 
-      <% for variable in type.variables { %>
+      <% usedNames = [] %>
+      <% for variable in type.variables where !usedNames.contains(variable.name) { %>
+        <% usedNames.append(variable.name) %>
         <% if type.based["DynamicSerializable"] != nil && variable.name == "additionalFields" { %>
           self.additionalFields = source
         <% } else { %>
@@ -225,7 +231,9 @@ extension <%= type.name %> : ConcreteSerializable {
   struct VirtualInstance {
     var keyPrefix: String
 
-    <% for variable in type.variables { %>
+    <% usedNames = [] %>
+    <% for variable in type.variables where !usedNames.contains(variable.name) { %>
+      <% usedNames.append(variable.name) %>
       // <%=variable.name%>: <%=variable.typeName%>
       <% if variable.typeName.unwrappedTypeName == "String"
          || variable.typeName.unwrappedTypeName == "ObjectId"

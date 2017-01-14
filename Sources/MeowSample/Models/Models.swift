@@ -18,6 +18,13 @@ final class Tutorial: Model {
         return try Tutorial.find()
     }
     
+    // sourcery: api=get,data=query,pathSuffix=filtered,permissions=anonymous
+    static func list(minDuration: Int, maxDuration: Int) throws -> Cursor<Tutorial> {
+        return try Tutorial.find { tutorial in
+            return tutorial.duration >= minDuration && tutorial.duration <= maxDuration
+        }
+    }
+    
     // sourcery: api=post,data=json,pathSuffix=/,permissions=anonymous
     static func create(name: String, author: String, url: String, image: String?) throws -> Tutorial {
         let tutorial = Tutorial(named: name, author: author, url: url, image: image)

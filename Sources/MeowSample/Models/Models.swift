@@ -33,7 +33,7 @@ final class Tutorial: Model {
         return tutorial
     }
     
-    // sourcery: api=delete,permissions=anonymous
+    // sourcery: api=delete,pathSuffix=/,permissions=anonymous
     func remove() throws {
         try self.delete()
     }

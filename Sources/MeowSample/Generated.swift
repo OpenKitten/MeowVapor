@@ -489,6 +489,60 @@ extension Droplet {
           }
       
         
+          self.get("tutorials", "filtered") { request in
+        
+
+        
+          
+            guard let query = request.query, case .object(let parameters) = query else {
+                return Response(status: .badRequest)
+            }
+          
+
+          
+            
+
+              
+                guard let minDuration = parameters["minDuration"]?.int else {
+                  return Response(status: .badRequest)
+                }
+              
+            
+          
+            
+
+              
+                guard let maxDuration = parameters["maxDuration"]?.int else {
+                  return Response(status: .badRequest)
+                }
+              
+            
+          
+        
+
+        
+
+        
+        // TODO: Reverse isVoid when that works
+           let responseObject = try Tutorial.list(
+            
+              minDuration: minDuration
+              
+              ,
+              
+            
+              maxDuration: maxDuration
+              
+            
+          )
+
+          
+            return responseObject
+          
+        
+          }
+      
+        
           self.post("tutorials", "/") { request in
         
 
@@ -569,7 +623,7 @@ extension Droplet {
           }
       
         
-          self.delete("tutorials", Tutorial.self, "remove") { request, model in
+          self.delete("tutorials", Tutorial.self, "/") { request, model in
         
 
         

@@ -30,7 +30,6 @@ import MeowVapor
         var keyPrefix: String
 
         
-        
 
         init(keyPrefix: String = "") {
           self.keyPrefix = keyPrefix
@@ -57,7 +56,6 @@ import MeowVapor
         var keyPrefix: String
 
         
-        
 
         init(keyPrefix: String = "") {
           self.keyPrefix = keyPrefix
@@ -77,14 +75,11 @@ extension Tutorial : ConcreteSerializable {
     
 
     
-    
-      
       // id: ObjectId (ObjectId)
       
         
       
     
-      
       // name: String (String)
       
         
@@ -92,7 +87,6 @@ extension Tutorial : ConcreteSerializable {
         
       
     
-      
       // author: String (String)
       
         
@@ -100,7 +94,6 @@ extension Tutorial : ConcreteSerializable {
         
       
     
-      
       // medium: Medium (Medium)
       
         
@@ -108,7 +101,6 @@ extension Tutorial : ConcreteSerializable {
         
       
     
-      
       // image: String (String)
       
         
@@ -116,7 +108,6 @@ extension Tutorial : ConcreteSerializable {
         
       
     
-      
       // url: String (String)
       
         
@@ -124,7 +115,6 @@ extension Tutorial : ConcreteSerializable {
         
       
     
-      
       // description: String (String)
       
         
@@ -132,7 +122,6 @@ extension Tutorial : ConcreteSerializable {
         
       
     
-      
       // duration: Int (Int)
       
         
@@ -140,7 +129,6 @@ extension Tutorial : ConcreteSerializable {
         
       
     
-      
       // difficulty: Difficulty (Difficulty)
       
         
@@ -148,19 +136,10 @@ extension Tutorial : ConcreteSerializable {
         
       
     
-      
       // exists: Bool (Bool)
       
         
           doc["exists"] = self.exists
-        
-      
-    
-      
-      // l1_inverter_min_v_alert: Double? (Double)
-      
-        
-          doc["l1_inverter_min_v_alert"] = self.l1_inverter_min_v_alert
         
       
     
@@ -294,18 +273,6 @@ extension Tutorial : ConcreteSerializable {
           
       
      
-        
-        // loop: l1_inverter_min_v_alert
-
-        
-          
-             // The property is a BSON type, so we can just extract it from the document:
-             
-                  let l1_inverter_min_v_alertValue: Double? = source.removeValue(forKey: "l1_inverter_min_v_alert") as? Double
-             
-          
-      
-     
 
       // initializerkaas:
       try self.init(
@@ -383,11 +350,6 @@ extension Tutorial : ConcreteSerializable {
           self.exists = existsValue
         
       
-        
-        
-          self.l1_inverter_min_v_alert = l1_inverter_min_v_alertValue
-        
-      
   }
 
   struct VirtualInstance {
@@ -455,12 +417,6 @@ extension Tutorial : ConcreteSerializable {
         var exists: VirtualBool { return VirtualBool(name: keyPrefix + "exists") }
       
     
-      
-      // l1_inverter_min_v_alert: Double?
-      
-        var l1_inverter_min_v_alert: VirtualNumber { return VirtualNumber(name: keyPrefix + "l1_inverter_min_v_alert") }
-      
-    
 
     init(keyPrefix: String = "") {
       self.keyPrefix = keyPrefix
@@ -472,38 +428,24 @@ extension Tutorial : ConcreteSerializable {
       _ = result.popLast() // to silence the warning of not mutating above variable in the case of a type with no references
 
       
-      
-        
         
       
         
+      
         
       
         
+      
         
       
         
+      
         
       
         
-        
       
         
-        
       
-        
-        
-      
-        
-        
-      
-        
-        
-      
-        
-        
-      
-        
         
       
 
@@ -560,180 +502,6 @@ extension Droplet {
     let meow = try Meow.init(mongoURL)
 
     
-      
-        
-          self.get("tutorials", "/") { request in
-        
-
-        
-
-        
-
-        
-        // TODO: Reverse isVoid when that works
-           let responseObject = try Tutorial.list(
-            
-          )
-
-          
-            return responseObject
-          
-        
-          }
-      
-        
-          self.get("tutorials", "filtered") { request in
-        
-
-        
-          
-            guard let query = request.query, case .object(let parameters) = query else {
-                return Response(status: .badRequest)
-            }
-          
-
-          
-            
-
-              
-                guard let minDuration = parameters["minDuration"]?.int else {
-                  return Response(status: .badRequest)
-                }
-              
-            
-          
-            
-
-              
-                guard let maxDuration = parameters["maxDuration"]?.int else {
-                  return Response(status: .badRequest)
-                }
-              
-            
-          
-        
-
-        
-
-        
-        // TODO: Reverse isVoid when that works
-           let responseObject = try Tutorial.list(
-            
-              minDuration: minDuration
-              
-              ,
-              
-            
-              maxDuration: maxDuration
-              
-            
-          )
-
-          
-            return responseObject
-          
-        
-          }
-      
-        
-          self.post("tutorials", "/") { request in
-        
-
-        
-          
-            guard let json = request.json?.node, case .object(let parameters) = json else {
-                return Response(status: .badRequest)
-            }
-          
-
-          
-            
-
-              
-                guard let name = parameters["name"]?.string else {
-                  return Response(status: .badRequest)
-                }
-              
-            
-          
-            
-
-              
-                guard let author = parameters["author"]?.string else {
-                  return Response(status: .badRequest)
-                }
-              
-            
-          
-            
-
-              
-                guard let url = parameters["url"]?.string else {
-                  return Response(status: .badRequest)
-                }
-              
-            
-          
-            
-              
-                let image = parameters["image"]?.string
-              
-
-            
-          
-        
-
-        
-
-        
-        // TODO: Reverse isVoid when that works
-           let responseObject = try Tutorial.create(
-            
-              name: name
-              
-              ,
-              
-            
-              author: author
-              
-              ,
-              
-            
-              url: url
-              
-              ,
-              
-            
-              image: image
-              
-            
-          )
-
-          
-            return responseObject
-          
-        
-          }
-      
-        
-          self.delete("tutorials", Tutorial.self, "/") { request, model in
-        
-
-        
-
-        
-
-        
-        // TODO: Reverse isVoid when that works
-           try model.remove(
-            
-          )
-
-            
-              return Response(status: .ok)
-            
-          
-          }
       
         
           self.get("tutorials", "/") { request in

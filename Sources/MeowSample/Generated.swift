@@ -36,6 +36,32 @@ import MeowVapor
     }
   
 
+  
+    // Optional(String)
+    extension Medium : ConcreteSingleValueSerializable {
+      init(value: ValueConvertible) throws {
+        let value: String = try Meow.Helpers.requireValue(value.makeBSONPrimitive() as? String, keyForError: "")
+        let me: Medium = try Meow.Helpers.requireValue(Medium(rawValue: value), keyForError: "")
+
+        self = me
+      }
+
+      func meowSerialize() -> ValueConvertible {
+        return self.rawValue
+      }
+
+      struct VirtualInstance {
+        var keyPrefix: String
+
+        
+
+        init(keyPrefix: String = "") {
+          self.keyPrefix = keyPrefix
+        }
+      }
+    }
+  
+
 
 
 extension Tutorial : ConcreteSerializable {
@@ -63,6 +89,13 @@ extension Tutorial : ConcreteSerializable {
       
         
           doc["author"] = self.author
+        
+      
+    
+      // medium: Medium (Medium)
+      
+        
+          doc[raw: "medium"] = self.medium.meowSerialize()
         
       
     
@@ -146,6 +179,19 @@ extension Tutorial : ConcreteSerializable {
           
       
      
+        // loop: medium
+
+        
+          
+          
+              
+                let MediumVal = try Meow.Helpers.requireValue(source.removeValue(forKey: "medium"), keyForError: "medium")
+                let mediumValue: Medium = try Medium(value: MediumVal)
+              
+          
+        
+      
+     
         // loop: image
 
         
@@ -219,6 +265,24 @@ extension Tutorial : ConcreteSerializable {
       try self.init(
         
         
+          named: nameValue
+          
+          ,
+          
+        
+          author: authorValue
+          
+          ,
+          
+        
+          url: urlValue
+          
+          ,
+          
+        
+          image: imageValue
+          
+        
       )
 
       
@@ -232,6 +296,10 @@ extension Tutorial : ConcreteSerializable {
       
         
           self.author = authorValue
+        
+      
+        
+          self.medium = mediumValue
         
       
         
@@ -279,6 +347,11 @@ extension Tutorial : ConcreteSerializable {
         var author: VirtualString { return VirtualString(name: keyPrefix + "author") }
       
     
+      // medium: Medium
+      
+        var medium: Medium.VirtualInstance { return Medium.VirtualInstance(keyPrefix: "medium.") }
+      
+    
       // image: String
       
         var image: VirtualString { return VirtualString(name: keyPrefix + "image") }
@@ -319,6 +392,8 @@ extension Tutorial : ConcreteSerializable {
       var result = [(key: String, destinationType: ConcreteModel.Type, deleteRule: DeleteRule.Type, id: ObjectId)]()
       _ = result.popLast() // to silence the warning of not mutating above variable in the case of a type with no references
 
+      
+        
       
         
       
@@ -392,6 +467,126 @@ extension Droplet {
     let meow = try Meow.init(mongoURL)
 
     
+      
+        
+          self.get("tutorials", "/") { request in
+        
+
+        
+
+        
+
+        
+        // TODO: Reverse isVoid when that works
+           let responseObject = try Tutorial.list(
+            
+          )
+
+          
+            return responseObject
+          
+        
+          }
+      
+        
+          self.post("tutorials", "/") { request in
+        
+
+        
+          
+            guard let json = request.json?.node, case .object(let parameters) = json else {
+                return Response(status: .badRequest)
+            }
+          
+
+          
+            
+
+              
+                guard let name = parameters["name"]?.string else {
+                  return Response(status: .badRequest)
+                }
+              
+            
+          
+            
+
+              
+                guard let author = parameters["author"]?.string else {
+                  return Response(status: .badRequest)
+                }
+              
+            
+          
+            
+
+              
+                guard let url = parameters["url"]?.string else {
+                  return Response(status: .badRequest)
+                }
+              
+            
+          
+            
+              
+                let image = parameters["image"]?.string
+              
+
+            
+          
+        
+
+        
+
+        
+        // TODO: Reverse isVoid when that works
+           let responseObject = try Tutorial.create(
+            
+              name: name
+              
+              ,
+              
+            
+              author: author
+              
+              ,
+              
+            
+              url: url
+              
+              ,
+              
+            
+              image: image
+              
+            
+          )
+
+          
+            return responseObject
+          
+        
+          }
+      
+        
+          self.delete("tutorials", Tutorial.self, "remove") { request, model in
+        
+
+        
+
+        
+
+        
+        // TODO: Reverse isVoid when that works
+           try model.remove(
+            
+          )
+
+            
+              return Response(status: .ok)
+            
+          
+          }
       
     
     self.run()

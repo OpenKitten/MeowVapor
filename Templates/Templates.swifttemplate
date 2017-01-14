@@ -338,9 +338,9 @@ extension Droplet {
     <% for type in (types.based["Model"] ?? []) { %>
       <% for method in type.methods where method.accessLevel == "public" || method.accessLevel == "internal" && method.annotations["api"] != nil { %>
         <% if method.isStatic { %>
-          self.<%= (method.annotations["api"] as? String ?? "").lowercased() %>("<%= type.name.lowercased() %>s", "<%= method.shortName %>") { request in
+          self.<%= (method.annotations["api"] as? String ?? "").lowercased() %>("<%= type.name.lowercased() %>s", "<%= method.annotations["pathSuffix"] as? String ?? method.shortName %>") { request in
         <% } else { %>
-          self.<%= (method.annotations["api"] as? String ?? "").lowercased() %>("<%= type.name.lowercased() %>s", <%= type.name %>.self, "<%= method.shortName %>") { request, model in
+          self.<%= (method.annotations["api"] as? String ?? "").lowercased() %>("<%= type.name.lowercased() %>s", <%= type.name %>.self, "<%= method.annotations["pathSuffix"] as? String ?? method.shortName %>") { request, model in
         <% } %>
 
         <% if (method.annotations["data"] as? String ?? "").lowercased() == "query" || (method.annotations["data"] as? String ?? "").lowercased() == "json" { %>
@@ -508,6 +508,8 @@ extension Droplet {
 
           <% if method.returnType?.based["Model"] != nil { %>
             return responseObject
+          <% } else if method.returnTypeName.name.hasPrefix("Cursor<") { %>
+            return responseObject
           <% } else { %>
             return Response(status: .ok)
           <% } %>
@@ -525,6 +527,8 @@ extension Droplet {
             <% if method.returnType?.based["Model"] != nil { %>
               return responseObject
             <% } else if method.returnType?.based["Embeddable"] != nil { %>
+              return responseObject
+            <% } else if method.returnTypeName.name.hasPrefix("Cursor<") { %>
               return responseObject
             <% } else { %>
               return Response(status: .ok)

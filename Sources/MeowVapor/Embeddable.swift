@@ -19,4 +19,8 @@ public protocol ConcreteSerializable {
     func meowSerialize() -> Document
 }
 
+public protocol ConcreteSingleValueSerializable {
+    func meowSerialize() -> ValueConvertible
+}
+
 public protocol Embeddable : Serializable {}

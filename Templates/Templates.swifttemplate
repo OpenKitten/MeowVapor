@@ -4,58 +4,105 @@ import Foundation
 import MeowVapor
 
 <%
-let serializables = (types.based["Model"] ?? []) + (types.based["Embeddable"] ?? [])
+let serializables = (types.classes.based["Model"] ?? []) + (types.classes.based["Embeddable"] ?? [])
 %>
+
+<% for type in types.enums { %>
+  <% if type.based["Embeddable"] != nil && type.rawTypeName != nil { %>
+    // <%= type.rawTypeName %>
+    extension <%= type.name %> : ConcreteSingleValueSerializable {
+      init(value: ValueConvertible) throws {
+        let value: <%= type.rawTypeName! %> = try Meow.Helpers.requireValue(value.makeBSONPrimitive() as? <%= type.rawTypeName! %>, keyForError: "")
+        let me: <%= type.name %> = try Meow.Helpers.requireValue(<%= type.name %>(rawValue: value), keyForError: "")
+
+        self = me
+      }
+
+      func meowSerialize() -> ValueConvertible {
+        return self.rawValue
+      }
+
+      struct VirtualInstance {
+        var keyPrefix: String
+
+        <% for variable in type.variables { %>
+          // <%=variable.name%>: <%=variable.typeName%>
+          <% if type.rawType?.name == "String"
+             || type.rawType?.name == "ObjectId"
+             || type.rawType?.name == "Date"
+             || type.rawType?.name == "Data"
+             || type.rawType?.name == "Bool" { %>
+            var <%= variable.name %>: Virtual<%=variable.unwrappedTypeName%> { return Virtual<%=variable.unwrappedTypeName%>(name: keyPrefix + "<%=variable.name%>") }
+          <% } else if type.rawType?.name == "Int"
+             || type.rawType?.name == "Int32"
+             || type.rawType?.name == "Int64"
+             || type.rawType?.name == "Double" { %>
+            var <%= variable.name %>: VirtualNumber { return VirtualNumber(name: keyPrefix + "<%=variable.name%>") }
+          <% } else if variable.typeName.name.hasPrefix("Reference") { %>
+            var <%= variable.name %>: VirtualReference<<%=variable.typeName.unwrappedTypeName%>.Model, <%=variable.typeName.unwrappedTypeName%>.DeleteRule> { return VirtualReference(name: keyPrefix + "<%=variable.name%>") }
+          <% } else { %>
+            // <%=variable%>
+          <% } %>
+        <% } %>
+
+        init(keyPrefix: String = "") {
+          self.keyPrefix = keyPrefix
+        }
+      }
+    }
+  <% } %>
+<% } %>
+
 <% for type in serializables { %>
 extension <%= type.name %> : ConcreteSerializable {
   func meowSerialize() -> Document {
-      <% if type.based["Model"] != nil { %>
-        var doc: Document = ["_id": self.id]
+    <% if type.based["Model"] != nil { %>
+      var doc: Document = ["_id": self.id]
+    <% } else { %>
+    var doc = Document()
+    <% } %>
+
+    <% if type.based["DynamicSerializable"] != nil { %>
+      doc += self.additionalFields
+    <% } %>
+
+    <% for variable in type.allVariables { %>
+      // <%= variable.name %>: <%= variable.typeName %> (<%= variable.typeName.unwrappedTypeName %>)
+      <% if variable.typeName.unwrappedTypeName.hasPrefix("[") && variable.typeName.unwrappedTypeName.hasSuffix("]") { %>
+        <% if variable.typeName.unwrappedTypeName == "[String]"
+           || variable.typeName.unwrappedTypeName == "[Data]"
+           || variable.typeName.unwrappedTypeName == "[Date]"
+           || variable.typeName.unwrappedTypeName == "[Bool]"
+           || variable.name != "id" && variable.typeName.unwrappedTypeName == "[ObjectId]"
+           || variable.typeName.unwrappedTypeName == "[Double]"
+           || variable.typeName.unwrappedTypeName == "[Int32]"
+           || variable.typeName.unwrappedTypeName == "[Int64]"
+           || variable.typeName.unwrappedTypeName == "[Int]" { %>
+          doc["<%= variable.name %>"] = self.<%= variable.name %>
+        <% } else if variable.typeName.name.hasPrefix("[Reference") { %>
+          doc["<%= variable.name %>"] = self.<%= variable.name %><% if variable.typeName.isOptional { %>?<% } %>.map { $0.id }
+        <% } %>
+        // TODO: Support [Embeddable]?
       <% } else { %>
-      var doc = Document()
-      <% } %>
-
-      <% if type.based["DynamicSerializable"] != nil { %>
-        doc += self.additionalFields
-      <% } %>
-
-      <% for variable in type.allVariables { %>
-        // <%= variable.name %>: <%= variable.typeName %> (<%= variable.typeName.unwrappedTypeName %>)
-        <% if variable.typeName.unwrappedTypeName.hasPrefix("[") && variable.typeName.unwrappedTypeName.hasSuffix("]") { %>
-          <% if variable.typeName.unwrappedTypeName == "[String]"
-             || variable.typeName.unwrappedTypeName == "[Data]"
-             || variable.typeName.unwrappedTypeName == "[Date]"
-             || variable.typeName.unwrappedTypeName == "[Bool]"
-             || variable.name != "id" && variable.typeName.unwrappedTypeName == "[ObjectId]"
-             || variable.typeName.unwrappedTypeName == "[Double]"
-             || variable.typeName.unwrappedTypeName == "[Int32]"
-             || variable.typeName.unwrappedTypeName == "[Int64]"
-             || variable.typeName.unwrappedTypeName == "[Int]" { %>
-            doc["<%= variable.name %>"] = self.<%= variable.name %>
-          <% } else if variable.typeName.name.hasPrefix("[Reference") { %>
-            doc["<%= variable.name %>"] = self.<%= variable.name %><% if variable.typeName.isOptional { %>?<% } %>.map { $0.id }
-          <% } %>
-          // TODO: Support [Embeddable]?
-        <% } else { %>
-          <% if variable.typeName.unwrappedTypeName == "String"
-             || variable.typeName.unwrappedTypeName == "Data"
-             || variable.typeName.unwrappedTypeName == "Date"
-             || variable.typeName.unwrappedTypeName == "Bool"
-             || variable.name != "id" && variable.typeName.unwrappedTypeName == "ObjectId"
-             || variable.typeName.unwrappedTypeName == "Double"
-             || variable.typeName.unwrappedTypeName == "Int32"
-             || variable.typeName.unwrappedTypeName == "Int64"
-             || variable.typeName.unwrappedTypeName == "Int" { %>
-            doc["<%= variable.name %>"] = self.<%= variable.name %>
-          <% } else if variable.typeName.name.hasPrefix("Reference") { %>
-            doc["<%= variable.name %>"] = self.<%= variable.name %><% if variable.typeName.isOptional { %>?<% } %>.id
-          <% } else if variable.type?.based["Embeddable"] != nil { %>
-            doc["<%= variable.name %>"] = self.<%= variable.name %><% if variable.typeName.isOptional { %>?<% } %>.meowSerialize()
-          <% } %>
+        <% if variable.typeName.unwrappedTypeName == "String"
+           || variable.typeName.unwrappedTypeName == "Data"
+           || variable.typeName.unwrappedTypeName == "Date"
+           || variable.typeName.unwrappedTypeName == "Bool"
+           || variable.name != "id" && variable.typeName.unwrappedTypeName == "ObjectId"
+           || variable.typeName.unwrappedTypeName == "Double"
+           || variable.typeName.unwrappedTypeName == "Int32"
+           || variable.typeName.unwrappedTypeName == "Int64"
+           || variable.typeName.unwrappedTypeName == "Int" { %>
+          doc["<%= variable.name %>"] = self.<%= variable.name %>
+        <% } else if variable.typeName.name.hasPrefix("Reference") { %>
+          doc["<%= variable.name %>"] = self.<%= variable.name %><% if variable.typeName.isOptional { %>?<% } %>.id
+        <% } else if variable.type?.based["Embeddable"] != nil { %>
+          doc[raw: "<%= variable.name %>"] = self.<%= variable.name %><% if variable.typeName.isOptional { %>?<% } %>.meowSerialize()
         <% } %>
       <% } %>
+    <% } %>
 
-      return doc
+    return doc
   }
 
   convenience init(fromDocument source: Document) throws {
@@ -130,14 +177,24 @@ extension <%= type.name %> : ConcreteSerializable {
         <% } else if variable.type?.based["Embeddable"] != nil { %>
           <% if variable.typeName.isOptional { %>
               let <%=variable.name%>Value: <%=variable.typeName%>
-              if let <%=variable.name%>Document: Document = source.removeValue(forKey: "<%=variable.name%>") as? Document {
-                <%=variable.name%>Value = try <%=variable.typeName.unwrappedTypeName%>(fromDocument: <%=variable.name%>Document)
+              <% if variable.type?.kind == "enum" { %>
+                  <%=variable.name%>Value = try <%=variable.typeName.unwrappedTypeName%>(value: source.removeValue(forKey: "<%=variable.name%>"))
+                <% } else { %>
+
+                if let <%=variable.name%>Document: Document = source.removeValue(forKey: "<%=variable.name%>") as? Document {
+                  <%=variable.name%>Value = try <%=variable.typeName.unwrappedTypeName%>(fromDocument: <%=variable.name%>Document)
+                <% } %>
               } else {
                 <%=variable.name%>Value = nil
               }
           <% } else { %>
+              <% if variable.type?.kind == "enum" { %>
+                let <%=variable.typeName%>Val = try Meow.Helpers.requireValue(source.removeValue(forKey: "<%=variable.name%>"), keyForError: "<%=variable.name%>")
+                let <%=variable.name%>Value: <%=variable.typeName%> = try <%=variable.typeName%>(value: <%=variable.typeName%>Val)
+              <% } else { %>
               let <%=variable.name%>Document: Document = try Meow.Helpers.requireValue(source.removeValue(forKey: "<%=variable.name%>") as? Document, keyForError: "<%=variable.name%>")
-              let <%=variable.name%>Value: <%=variable.typeName%> = try <%=variable.typeName%>(fromDocument: <%=variable.name%>Document)
+                let <%=variable.name%>Value: <%=variable.typeName%> = try <%=variable.typeName%>(fromDocument: <%=variable.name%>Document)
+              <% } %>
           <% } %>
         <% } else if variable.name == "id" { %>
             let idValue: ObjectId = try Meow.Helpers.requireValue(source.removeValue(forKey: "_id") as? ObjectId, keyForError: "id")

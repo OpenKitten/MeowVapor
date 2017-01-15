@@ -182,15 +182,19 @@ extension <%= type.name %> : ConcreteSerializable {
           <% if variable.typeName.isOptional { %>
               let <%=variable.name%>Value: <%=variable.typeName%>
               <% if variable.type?.kind == "enum" { %>
-                  <%=variable.name%>Value = try <%=variable.typeName.unwrappedTypeName%>(value: source.removeValue(forKey: "<%=variable.name%>"))
+                  if let sourceVal = source.removeValue(forKey: "<%=variable.name%>") {
+                    <%=variable.name%>Value = try <%=variable.typeName.unwrappedTypeName%>(value: sourceVal)
+                  } else {
+                    <%=variable.name%>Value = nil
+                  }
                 <% } else { %>
 
                 if let <%=variable.name%>Document: Document = source.removeValue(forKey: "<%=variable.name%>") as? Document {
                   <%=variable.name%>Value = try <%=variable.typeName.unwrappedTypeName%>(fromDocument: <%=variable.name%>Document)
-                <% } %>
-              } else {
-                <%=variable.name%>Value = nil
-              }
+                } else {
+                  <%=variable.name%>Value = nil
+                }
+              <% } %>
           <% } else { %>
               <% if variable.type?.kind == "enum" { %>
                 let <%=variable.typeName%>Val = try Meow.Helpers.requireValue(source.removeValue(forKey: "<%=variable.name%>"), keyForError: "<%=variable.name%>")

@@ -10,7 +10,7 @@ import Foundation
 import MongoKitten
 
 #if os(Linux)
-    typealias RegularExpression = NSRegularExpression
+    public typealias NSRegularExpression = RegularExpression
 #endif
 
 public protocol VirtualVariable {

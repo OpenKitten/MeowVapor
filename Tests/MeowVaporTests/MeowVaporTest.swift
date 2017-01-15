@@ -5,6 +5,7 @@ import XCTest
 class FlowTests: XCTestCase {
     override func setUp() {
         try! Meow.init("mongodb://localhost:27017/vapor-meow")
+        try! Meow.database.drop()
     }
     
     func testExample() throws {
@@ -33,6 +34,8 @@ class FlowTests: XCTestCase {
             }, 2)
         
         XCTAssertEqual(try User.count(), 5)
+        
+        XCTAssertEqual(try User.findOne { $0.username == "harrie" }?.password, "bob")
     }
 
 

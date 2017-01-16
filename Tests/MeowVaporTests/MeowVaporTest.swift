@@ -2,7 +2,7 @@ import XCTest
 @testable import MeowVapor
 
 
-class FlowTests: XCTestCase {
+class MeowVaporTests: XCTestCase {
     override func setUp() {
         try! Meow.init("mongodb://localhost:27017/vapor-meow")
         try! Meow.database.drop()
@@ -39,7 +39,7 @@ class FlowTests: XCTestCase {
     }
 
 
-    static var allTests : [(String, (FlowTests) -> () throws -> Void)] {
+    static var allTests : [(String, (MeowVaporTests) -> () throws -> Void)] {
         return [
             ("testExample", testExample),
         ]

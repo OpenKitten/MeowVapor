@@ -4,7 +4,8 @@ let package = Package(
     name: "MeowVapor",
     targets: [
         Target(name: "MeowVaporTemplating"),
-        Target(name: "MeowVapor", dependencies: ["MeowVaporTemplating"]),
+        Target(name: "BSONTemplating"),
+        Target(name: "MeowVapor", dependencies: ["MeowVaporTemplating", "BSONTemplating"]),
         Target(name: "MeowSample", dependencies: ["MeowVapor"])
     ],
     dependencies: [

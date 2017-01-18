@@ -6,6 +6,7 @@ import HTTP
 
 let drop = Droplet()
 
+drop.middleware = []
 let stem = MeowVaporTemplating.Stem(workingDirectory: "/Users/joannis/Desktop/")
 
 drop.get("remove") { _ in

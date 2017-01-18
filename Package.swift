@@ -9,7 +9,7 @@ let package = Package(
         Target(name: "MeowSample", dependencies: ["MeowVapor"])
     ],
     dependencies: [
-        .Package(url: "https://github.com/OpenKitten/MongoKitten.git", majorVersion: 3),
+        .Package(url: "https://github.com/OpenKitten/MongoKitten.git", Version(0, 0, 31)),
         .Package(url: "https://github.com/Vapor/Vapor.git", majorVersion: 1)
     ]
 )

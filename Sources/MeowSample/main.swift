@@ -29,12 +29,22 @@ drop.get("populate") { req in
 //    #(user.hoi) 123
 //}
 //meep
+let compiledTemplate = Template(compiled: try! LeafSyntax.compile(atPath: "/Users/joannis/Desktop/kaas.leaf"))
+
 drop.get("leaf") { req in
     let leaf = try stem.spawnLeaf(named: "kaas")
     
     let cursor = try Meow.database["users"].find(withBatchSize: 1000)
     
     return Response(body: try stem.render(leaf, with: Context(["cursor": cursor] as Document)))
+}
+
+drop.get("leafplus") { req in
+    let result = try compiledTemplate.run(inContext: [
+        "cursor": Template.Context.ContextValue.cursor(try Meow.database["users"].find(withBatchSize: 1000))
+        ])
+    
+    return Response(body: .data(result))
 }
 
 //Hoi
@@ -56,6 +66,7 @@ drop.get("bsontemplating") { req in
         0x00,
         // meep
         0x01, 0x6d, 0x65, 0x65, 0x70,
+        0x00
         ])
     
     let result = try template.run(inContext: [

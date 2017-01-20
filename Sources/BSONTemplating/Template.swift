@@ -9,7 +9,12 @@ public enum TemplateError: Error {
     case emptyVariablePath
     case variableNotADocument(atKey: String)
     case loopingOverNil
+    case unclosedLoop
     case loopingOverNonArrayType
+}
+
+public protocol TemplatingSyntax {
+    static func compile(fromData data: [UInt8]) throws -> [UInt8]
 }
 
 public protocol ContextValueConvertible {
@@ -183,8 +188,11 @@ public final class Template {
         }
         
         func runStatements(inContext context: Context) throws {
-            while position < compiled.count, compiled[position] != 0x00 {
+            while position < compiled.count {
                 elementSwitch: switch compiled[position] {
+                case 0x00:
+                    position += 1
+                    return
                 case 0x01:
                     position += 1
                     
@@ -235,6 +243,11 @@ public final class Template {
                             }
                         }
                         
+                        guard compiled[position] == 0x00 else {
+                            throw TemplateError.unclosedLoop
+                        }
+                        
+                        position += 1
                     case 0x03:
                         position += 1
                         

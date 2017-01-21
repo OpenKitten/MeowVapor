@@ -25,27 +25,11 @@ let serializables = (types.classes.based["Model"] ?? []) + (types.classes.based[
       }
 
       struct VirtualInstance {
-        var keyPrefix: String
+        static func ==(lhs: VirtualInstance, rhs: <%= type.name %>) -> Query {
+          return lhs.keyPrefix == rhs.meowSerialize()
+        }
 
-        <% for variable in type.variables { %>
-          // <%=variable.name%>: <%=variable.typeName%>
-          <% if type.rawType?.name == "String"
-             || type.rawType?.name == "ObjectId"
-             || type.rawType?.name == "Date"
-             || type.rawType?.name == "Data"
-             || type.rawType?.name == "Bool" { %>
-            var <%= variable.name %>: Virtual<%=variable.unwrappedTypeName%> { return Virtual<%=variable.unwrappedTypeName%>(name: keyPrefix + "<%=variable.name%>") }
-          <% } else if type.rawType?.name == "Int"
-             || type.rawType?.name == "Int32"
-             || type.rawType?.name == "Int64"
-             || type.rawType?.name == "Double" { %>
-            var <%= variable.name %>: VirtualNumber { return VirtualNumber(name: keyPrefix + "<%=variable.name%>") }
-          <% } else if variable.typeName.name.hasPrefix("Reference") { %>
-            var <%= variable.name %>: VirtualReference<<%=variable.typeName.unwrappedTypeName%>.Model, <%=variable.typeName.unwrappedTypeName%>.DeleteRule> { return VirtualReference(name: keyPrefix + "<%=variable.name%>") }
-          <% } else { %>
-            // <%=variable%>
-          <% } %>
-        <% } %>
+        var keyPrefix: String
 
         init(keyPrefix: String = "") {
           self.keyPrefix = keyPrefix
@@ -519,9 +503,17 @@ extension Droplet {
           )
 
           <% if method.returnType?.based["Model"] != nil { %>
-            return responseObject
+            <% if method.returnTypeName.isOptional == true { %>
+              return try Meow.Helpers.requireValue(responseObject, keyForError: "")
+            <% } else { %>
+              return responseObject
+            <% } %>
           <% } else if method.returnTypeName.name.hasPrefix("Cursor<") { %>
-            return responseObject
+            <% if method.returnTypeName.isOptional == true { %>
+              return try Meow.Helpers.requireValue(responseObject, keyForError: "")
+            <% } else { %>
+              return responseObject
+            <% } %>
           <% } else { %>
             return Response(status: .ok)
           <% } %>

@@ -14,10 +14,10 @@ import MeowVapor
 
   
     // Optional(String)
-    extension Difficulty : ConcreteSingleValueSerializable {
+    extension Gender : ConcreteSingleValueSerializable {
       init(value: ValueConvertible) throws {
         let value: String = try Meow.Helpers.requireValue(value.makeBSONPrimitive() as? String, keyForError: "")
-        let me: Difficulty = try Meow.Helpers.requireValue(Difficulty(rawValue: value), keyForError: "")
+        let me: Gender = try Meow.Helpers.requireValue(Gender(rawValue: value), keyForError: "")
 
         self = me
       }
@@ -27,35 +27,11 @@ import MeowVapor
       }
 
       struct VirtualInstance {
-        var keyPrefix: String
-
-        
-
-        init(keyPrefix: String = "") {
-          self.keyPrefix = keyPrefix
+        static func ==(lhs: VirtualInstance, rhs: Gender) -> Query {
+          return lhs.keyPrefix == rhs.meowSerialize()
         }
-      }
-    }
-  
 
-  
-    // Optional(String)
-    extension Medium : ConcreteSingleValueSerializable {
-      init(value: ValueConvertible) throws {
-        let value: String = try Meow.Helpers.requireValue(value.makeBSONPrimitive() as? String, keyForError: "")
-        let me: Medium = try Meow.Helpers.requireValue(Medium(rawValue: value), keyForError: "")
-
-        self = me
-      }
-
-      func meowSerialize() -> ValueConvertible {
-        return self.rawValue
-      }
-
-      struct VirtualInstance {
         var keyPrefix: String
-
-        
 
         init(keyPrefix: String = "") {
           self.keyPrefix = keyPrefix
@@ -66,7 +42,7 @@ import MeowVapor
 
 
 
-extension Tutorial : ConcreteSerializable {
+extension User : ConcreteSerializable {
   func meowSerialize() -> Document {
     
       var doc: Document = ["_id": self.id]
@@ -80,6 +56,13 @@ extension Tutorial : ConcreteSerializable {
         
       
     
+      // email: String (String)
+      
+        
+          doc["email"] = self.email
+        
+      
+    
       // name: String (String)
       
         
@@ -87,59 +70,10 @@ extension Tutorial : ConcreteSerializable {
         
       
     
-      // author: String (String)
+      // gender: Gender? (Gender)
       
         
-          doc["author"] = self.author
-        
-      
-    
-      // medium: Medium (Medium)
-      
-        
-          doc[raw: "medium"] = self.medium.meowSerialize()
-        
-      
-    
-      // image: String (String)
-      
-        
-          doc["image"] = self.image
-        
-      
-    
-      // url: String (String)
-      
-        
-          doc["url"] = self.url
-        
-      
-    
-      // description: String (String)
-      
-        
-          doc["description"] = self.description
-        
-      
-    
-      // duration: Int (Int)
-      
-        
-          doc["duration"] = self.duration
-        
-      
-    
-      // difficulty: Difficulty (Difficulty)
-      
-        
-          doc[raw: "difficulty"] = self.difficulty.meowSerialize()
-        
-      
-    
-      // exists: Bool (Bool)
-      
-        
-          doc["exists"] = self.exists
+          doc[raw: "gender"] = self.gender?.meowSerialize()
         
       
     
@@ -162,6 +96,18 @@ extension Tutorial : ConcreteSerializable {
       
      
         
+        // loop: email
+
+        
+          
+             // The property is a BSON type, so we can just extract it from the document:
+             
+                  let emailValue: String = try Meow.Helpers.requireValue(source.removeValue(forKey: "email") as? String, keyForError: "email")
+             
+          
+      
+     
+        
         // loop: name
 
         
@@ -174,103 +120,21 @@ extension Tutorial : ConcreteSerializable {
       
      
         
-        // loop: author
-
-        
-          
-             // The property is a BSON type, so we can just extract it from the document:
-             
-                  let authorValue: String = try Meow.Helpers.requireValue(source.removeValue(forKey: "author") as? String, keyForError: "author")
-             
-          
-      
-     
-        
-        // loop: medium
+        // loop: gender
 
         
           
           
+              let genderValue: Gender?
               
-                let MediumVal = try Meow.Helpers.requireValue(source.removeValue(forKey: "medium"), keyForError: "medium")
-                let mediumValue: Medium = try Medium(value: MediumVal)
-              
+                  if let sourceVal = source.removeValue(forKey: "gender") {
+                    genderValue = try Gender(value: sourceVal)
+                  } else {
+                    genderValue = nil
+                  }
+                
           
         
-      
-     
-        
-        // loop: image
-
-        
-          
-             // The property is a BSON type, so we can just extract it from the document:
-             
-                  let imageValue: String = try Meow.Helpers.requireValue(source.removeValue(forKey: "image") as? String, keyForError: "image")
-             
-          
-      
-     
-        
-        // loop: url
-
-        
-          
-             // The property is a BSON type, so we can just extract it from the document:
-             
-                  let urlValue: String = try Meow.Helpers.requireValue(source.removeValue(forKey: "url") as? String, keyForError: "url")
-             
-          
-      
-     
-        
-        // loop: description
-
-        
-          
-             // The property is a BSON type, so we can just extract it from the document:
-             
-                  let descriptionValue: String = try Meow.Helpers.requireValue(source.removeValue(forKey: "description") as? String, keyForError: "description")
-             
-          
-      
-     
-        
-        // loop: duration
-
-        
-          
-             // The property is a BSON type, so we can just extract it from the document:
-             
-                  let durationValue: Int = try Meow.Helpers.requireValue(source.removeValue(forKey: "duration") as? Int, keyForError: "duration")
-             
-          
-      
-     
-        
-        // loop: difficulty
-
-        
-          
-          
-              
-                let DifficultyVal = try Meow.Helpers.requireValue(source.removeValue(forKey: "difficulty"), keyForError: "difficulty")
-                let difficultyValue: Difficulty = try Difficulty(value: DifficultyVal)
-              
-          
-        
-      
-     
-        
-        // loop: exists
-
-        
-          
-             // The property is a BSON type, so we can just extract it from the document:
-             
-                  let existsValue: Bool = try Meow.Helpers.requireValue(source.removeValue(forKey: "exists") as? Bool, keyForError: "exists")
-             
-          
       
      
 
@@ -278,22 +142,17 @@ extension Tutorial : ConcreteSerializable {
       try self.init(
         
         
-          named: nameValue
+          email: emailValue
           
           ,
           
         
-          author: authorValue
+          name: nameValue
           
           ,
           
         
-          url: urlValue
-          
-          ,
-          
-        
-          image: imageValue
+          gender: genderValue
           
         
       )
@@ -307,47 +166,17 @@ extension Tutorial : ConcreteSerializable {
       
         
         
+          self.email = emailValue
+        
+      
+        
+        
           self.name = nameValue
         
       
         
         
-          self.author = authorValue
-        
-      
-        
-        
-          self.medium = mediumValue
-        
-      
-        
-        
-          self.image = imageValue
-        
-      
-        
-        
-          self.url = urlValue
-        
-      
-        
-        
-          self.description = descriptionValue
-        
-      
-        
-        
-          self.duration = durationValue
-        
-      
-        
-        
-          self.difficulty = difficultyValue
-        
-      
-        
-        
-          self.exists = existsValue
+          self.gender = genderValue
         
       
   }
@@ -364,57 +193,21 @@ extension Tutorial : ConcreteSerializable {
       
     
       
+      // email: String
+      
+        var email: VirtualString { return VirtualString(name: keyPrefix + "email") }
+      
+    
+      
       // name: String
       
         var name: VirtualString { return VirtualString(name: keyPrefix + "name") }
       
     
       
-      // author: String
+      // gender: Gender?
       
-        var author: VirtualString { return VirtualString(name: keyPrefix + "author") }
-      
-    
-      
-      // medium: Medium
-      
-        var medium: Medium.VirtualInstance { return Medium.VirtualInstance(keyPrefix: "medium.") }
-      
-    
-      
-      // image: String
-      
-        var image: VirtualString { return VirtualString(name: keyPrefix + "image") }
-      
-    
-      
-      // url: String
-      
-        var url: VirtualString { return VirtualString(name: keyPrefix + "url") }
-      
-    
-      
-      // description: String
-      
-        var description: VirtualString { return VirtualString(name: keyPrefix + "description") }
-      
-    
-      
-      // duration: Int
-      
-        var duration: VirtualNumber { return VirtualNumber(name: keyPrefix + "duration") }
-      
-    
-      
-      // difficulty: Difficulty
-      
-        var difficulty: Difficulty.VirtualInstance { return Difficulty.VirtualInstance(keyPrefix: "difficulty.") }
-      
-    
-      
-      // exists: Bool
-      
-        var exists: VirtualBool { return VirtualBool(name: keyPrefix + "exists") }
+        var gender: Gender.VirtualInstance { return Gender.VirtualInstance(keyPrefix: "gender.") }
       
     
 
@@ -436,18 +229,6 @@ extension Tutorial : ConcreteSerializable {
       
         
       
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
 
       return result
   }
@@ -455,15 +236,15 @@ extension Tutorial : ConcreteSerializable {
 
 
 
-extension Tutorial : ConcreteModel {
-    static let meowCollection = Meow.database["tutorial"]
+extension User : ConcreteModel {
+    static let meowCollection = Meow.database["user"]
 
-    static func find(matching closure: ((VirtualInstance) -> (Query))) throws -> Cursor<Tutorial> {
+    static func find(matching closure: ((VirtualInstance) -> (Query))) throws -> Cursor<User> {
         let query = closure(VirtualInstance())
         return try self.find(matching: query)
     }
 
-    static func findOne(matching closure: ((VirtualInstance) -> (Query))) throws -> Tutorial? {
+    static func findOne(matching closure: ((VirtualInstance) -> (Query))) throws -> User? {
         let query = closure(VirtualInstance())
         return try self.findOne(matching: query)
     }
@@ -474,9 +255,9 @@ extension Tutorial : ConcreteModel {
     }
 }
 
-extension Tutorial : StringInitializable {
+extension User : StringInitializable {
   public convenience init?(from string: String) throws {
-    guard let document = try Tutorial.meowCollection.findOne(matching: "_id" == (try ObjectId(string))) else {
+    guard let document = try User.meowCollection.findOne(matching: "_id" == (try ObjectId(string))) else {
       return nil
     }
 
@@ -484,13 +265,13 @@ extension Tutorial : StringInitializable {
   }
 }
 
-extension Tutorial : ValueConvertible {
+extension User : ValueConvertible {
   public func makeBSONPrimitive() -> BSONPrimitive {
     return self.meowSerialize()
   }
 }
 
-extension Tutorial : ResponseRepresentable {
+extension User : ResponseRepresentable {
   public func makeResponse() -> Response {
     return self.makeExtendedJSON().makeResponse()
   }
@@ -504,7 +285,7 @@ extension Droplet {
     
       
         
-          self.get("tutorials", "/") { request in
+          self.get("users", "/") { request in
         
 
         
@@ -513,18 +294,20 @@ extension Droplet {
 
         
         // TODO: Reverse isVoid when that works
-           let responseObject = try Tutorial.list(
+           let responseObject = try User.list(
             
           )
 
           
-            return responseObject
+            
+              return responseObject
+            
           
         
           }
       
         
-          self.get("tutorials", "filtered") { request in
+          self.get("users", "filtered") { request in
         
 
         
@@ -538,16 +321,7 @@ extension Droplet {
             
 
               
-                guard let minDuration = parameters["minDuration"]?.int else {
-                  return Response(status: .badRequest)
-                }
-              
-            
-          
-            
-
-              
-                guard let maxDuration = parameters["maxDuration"]?.int else {
+                guard let email = parameters["email"]?.string else {
                   return Response(status: .badRequest)
                 }
               
@@ -559,31 +333,28 @@ extension Droplet {
 
         
         // TODO: Reverse isVoid when that works
-           let responseObject = try Tutorial.list(
+           let responseObject = try User.find(
             
-              minDuration: minDuration
-              
-              ,
-              
-            
-              maxDuration: maxDuration
+              email: email
               
             
           )
 
           
-            return responseObject
+            
+              return try Meow.Helpers.requireValue(responseObject, keyForError: "")
+            
           
         
           }
       
         
-          self.post("tutorials", "/") { request in
+          self.get("users", "containing") { request in
         
 
         
           
-            guard let json = request.json?.node, case .object(let parameters) = json else {
+            guard let query = request.query, case .object(let parameters) = query else {
                 return Response(status: .badRequest)
             }
           
@@ -592,35 +363,10 @@ extension Droplet {
             
 
               
-                guard let name = parameters["name"]?.string else {
+                guard let email = parameters["email"]?.string else {
                   return Response(status: .badRequest)
                 }
               
-            
-          
-            
-
-              
-                guard let author = parameters["author"]?.string else {
-                  return Response(status: .badRequest)
-                }
-              
-            
-          
-            
-
-              
-                guard let url = parameters["url"]?.string else {
-                  return Response(status: .badRequest)
-                }
-              
-            
-          
-            
-              
-                let image = parameters["image"]?.string
-              
-
             
           
         
@@ -629,36 +375,23 @@ extension Droplet {
 
         
         // TODO: Reverse isVoid when that works
-           let responseObject = try Tutorial.create(
+           let responseObject = try User.find(
             
-              name: name
-              
-              ,
-              
-            
-              author: author
-              
-              ,
-              
-            
-              url: url
-              
-              ,
-              
-            
-              image: image
+              email: email
               
             
           )
 
           
-            return responseObject
+            
+              return try Meow.Helpers.requireValue(responseObject, keyForError: "")
+            
           
         
           }
       
         
-          self.delete("tutorials", Tutorial.self, "/") { request, model in
+          self.delete("users", User.self, "/") { request, model in
         
 
         

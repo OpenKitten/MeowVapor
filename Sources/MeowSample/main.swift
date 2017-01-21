@@ -1,7 +1,5 @@
 import MeowVapor
 import Vapor
-import MeowVaporTemplating
-import BSONTemplating
 import HTTP
 
 let drop = Droplet()

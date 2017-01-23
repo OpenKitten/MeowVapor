@@ -20,6 +20,8 @@ touch Sources/Generated.swift
 swift package generate-xcodeproj
 ```
 
+[Or copy the example project at https://github.com/OpenKitten/MeowVaporExample](https://github.com/OpenKitten/MeowVaporExample)
+
 # Models
 
 First you'll have to create/edit your models. They need to be a class. They only require 2 things:

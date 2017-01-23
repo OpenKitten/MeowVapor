@@ -124,3 +124,12 @@ let owner = try group.owner.resolve()
 # This will update the boilerplate and type-safe queries code
 sourcery Sources Packages/MeowVapor-*/Templates Sources/Generated.swift
 ```
+
+Or during development:
+
+```bash
+# This will update the boilerplate and type-safe queries code
+sourcery Sources Packages/MeowVapor-*/Templates Sources/Generated.swift --watch
+```
+
+This will create a watcher to update every change to your models.

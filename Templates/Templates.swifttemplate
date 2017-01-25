@@ -4,58 +4,90 @@ import Foundation
 import MeowVapor
 
 <%
-let serializables = (types.classes.based["Model"] ?? []) + (types.classes.based["Embeddable"] ?? [])
+// Selects all classes and structs that are either based on a model or embeddable protocol
+let classes = (types.classes.based["Model"] ?? []) + (types.classes.based["Embeddable"] ?? [])
+let structs = (types.structs.based["Model"] ?? []) + (types.structs.based["Embeddable"] ?? [])
+let serializables = classes + structs
 %>
 
-<% var usedNames = [String]() %>
+<%
+  // Keeps track of all used types so they don't occur twice, workaround for a Sourcery bug
+  var usedNames = [String]()
+%>
 
-<% for type in types.enums { %>
-  <% if type.based["Embeddable"] != nil && type.rawTypeName != nil { %>
-    // <%= type.rawTypeName %>
-    extension <%= type.name %> : ConcreteSingleValueSerializable {
-      init(value: ValueConvertible) throws {
-        let value: <%= type.rawTypeName! %> = try Meow.Helpers.requireValue(value.makeBSONPrimitive() as? <%= type.rawTypeName! %>, keyForError: "")
-        let me: <%= type.name %> = try Meow.Helpers.requireValue(<%= type.name %>(rawValue: value), keyForError: "")
+<%
+  // Selects all enums that are embeddable and generates a ype safe query for them, as well as it's conversion to a BSONValue
+  for type in types.enums where type.based["Embeddable"] != nil && type.rawTypeName != nil {
+%>
+  extension <%= type.name %> : ConcreteSingleValueSerializable {
+    <%
+      // Creates this type from a BSON ValueConvertible
+    %>
+    init(value: ValueConvertible) throws {
+      let value: <%= type.rawTypeName! %> = try Meow.Helpers.requireValue(value.makeBSONPrimitive() as? <%= type.rawTypeName! %>, keyForError: "")
+      let me: <%= type.name %> = try Meow.Helpers.requireValue(<%= type.name %>(rawValue: value), keyForError: "")
 
-        self = me
+      self = me
+    }
+
+    <%
+      // Serializes this enum case to a BSON type
+    %>
+    func meowSerialize() -> ValueConvertible {
+      return self.rawValue
+    }
+
+    <%
+      // Generates a type safe query object for this enum type
+    %>
+    struct VirtualInstance {
+      <%
+        // Compares this enum's VirtualInstance type with an actual enum case and generates a Query
+      %>
+      static func ==(lhs: VirtualInstance, rhs: <%= type.name %>) -> Query {
+        return lhs.keyPrefix == rhs.meowSerialize()
       }
 
-      func meowSerialize() -> ValueConvertible {
-        return self.rawValue
-      }
+      var keyPrefix: String
 
-      struct VirtualInstance {
-        static func ==(lhs: VirtualInstance, rhs: <%= type.name %>) -> Query {
-          return lhs.keyPrefix == rhs.meowSerialize()
-        }
-
-        var keyPrefix: String
-
-        init(keyPrefix: String = "") {
-          self.keyPrefix = keyPrefix
-        }
+      init(keyPrefix: String = "") {
+        self.keyPrefix = keyPrefix
       }
     }
-  <% } %>
+  }
 <% } %>
 
-<% for type in serializables { %>
+<%
+  // Loops over all serializable objects and creates an extension to ConcreteSerializable for each one
+  // ConcreteSerializable allows serializing to and from a BSON Document with this type
+  for type in serializables {
+%>
 extension <%= type.name %> : ConcreteSerializable {
   func meowSerialize() -> Document {
-    <% if type.based["Model"] != nil { %>
+    <%
+      // Add the _id for models
+      if type.based["Model"] != nil {
+    %>
       var doc: Document = ["_id": self.id]
     <% } else { %>
     var doc = Document()
     <% } %>
 
-    <% if type.based["DynamicSerializable"] != nil { %>
+    <%
+      // If this is a DynamicSerializable object, apply the additionalFields fields that don't reside inside the schema
+      if type.based["DynamicSerializable"] != nil {
+    %>
       doc += self.additionalFields
     <% } %>
 
-    <% for variable in type.allVariables { %>
-      // <%= variable.name %>: <%= variable.typeName %> (<%= variable.typeName.unwrappedTypeName %>)
-      <% if variable.typeName.unwrappedTypeName.hasPrefix("[") && variable.typeName.unwrappedTypeName.hasSuffix("]") { %>
-        <% if variable.typeName.unwrappedTypeName == "[String]"
+    <%
+      // Loops over all variables in this Model/Embeddable and serializes them to the output document
+      for variable in type.allVariables {
+        // If this is an array
+        if variable.typeName.unwrappedTypeName.hasPrefix("[") && variable.typeName.unwrappedTypeName.hasSuffix("]") {
+
+          // If it's an array of ValueConvertible types
+          if variable.typeName.unwrappedTypeName == "[String]"
            || variable.typeName.unwrappedTypeName == "[Data]"
            || variable.typeName.unwrappedTypeName == "[Date]"
            || variable.typeName.unwrappedTypeName == "[Bool]"
@@ -63,14 +95,20 @@ extension <%= type.name %> : ConcreteSerializable {
            || variable.typeName.unwrappedTypeName == "[Double]"
            || variable.typeName.unwrappedTypeName == "[Int32]"
            || variable.typeName.unwrappedTypeName == "[Int64]"
-           || variable.typeName.unwrappedTypeName == "[Int]" { %>
+           || variable.typeName.unwrappedTypeName == "[Int]" {
+             %>
           doc["<%= variable.name %>"] = self.<%= variable.name %>
-        <% } else if variable.typeName.name.hasPrefix("[Reference") { %>
+        <%
+        // If it's an array of references
+          } else if variable.typeName.name.hasPrefix("[Reference") { %>
           doc["<%= variable.name %>"] = self.<%= variable.name %><% if variable.typeName.isOptional { %>?<% } %>.map { $0.id }
-        <% } %>
+       <% }
         // TODO: Support [Embeddable]?
-      <% } else { %>
-        <% if variable.typeName.unwrappedTypeName == "String"
+
+        // If this is not an array
+        } else {
+          // If the type is a BSON primitive type
+          if variable.typeName.unwrappedTypeName == "String"
            || variable.typeName.unwrappedTypeName == "Data"
            || variable.typeName.unwrappedTypeName == "Date"
            || variable.typeName.unwrappedTypeName == "Bool"
@@ -80,24 +118,30 @@ extension <%= type.name %> : ConcreteSerializable {
            || variable.typeName.unwrappedTypeName == "Int64"
            || variable.typeName.unwrappedTypeName == "Int" { %>
           doc["<%= variable.name %>"] = self.<%= variable.name %>
-        <% } else if variable.typeName.name.hasPrefix("Reference") { %>
+        <%
+          // If this is a single reference
+          } else if variable.typeName.name.hasPrefix("Reference") {
+        %>
           doc["<%= variable.name %>"] = self.<%= variable.name %><% if variable.typeName.isOptional { %>?<% } %>.id
         <% } else if variable.type?.based["Embeddable"] != nil { %>
           doc[raw: "<%= variable.name %>"] = self.<%= variable.name %><% if variable.typeName.isOptional { %>?<% } %>.meowSerialize()
-        <% } %>
-      <% } %>
-    <% } %>
+        <%
+        }
+      }
+    } %>
 
     return doc
   }
 
+  <%
+    // Creates a new instance of this model/embeddable from a Document
+  %>
   convenience init(fromDocument source: Document) throws {
     var source = source
       // Extract all properties
       <% usedNames = [] %>
       <% for variable in type.variables where !usedNames.contains(variable.name) { %>
         <% usedNames.append(variable.name) %>
-        // loop: <%= variable.name %>
 
         <% if variable.typeName.unwrappedTypeName.hasPrefix("[") && variable.typeName.unwrappedTypeName.hasSuffix("]") { %>
           <% if variable.typeName.unwrappedTypeName == "[String]"
@@ -194,7 +238,8 @@ extension <%= type.name %> : ConcreteSerializable {
       <% } %>
      <% } %>
 
-      // initializerkaas:
+      // Uses the first existing initializer
+      // TODO: Support multiple/more complex initializers
       try self.init(
         <% let parameters = type.initializers.first?.parameters ?? [] %>
         <% for (index, parameter) in parameters.enumerated() { %>
@@ -205,6 +250,7 @@ extension <%= type.name %> : ConcreteSerializable {
         <% } %>
       )
 
+      // Sets the other variables
       <% usedNames = [] %>
       <% for variable in type.variables where !usedNames.contains(variable.name) { %>
         <% usedNames.append(variable.name) %>
@@ -216,6 +262,9 @@ extension <%= type.name %> : ConcreteSerializable {
       <% } %>
   }
 
+  <%
+    // The VirtualInstance of this type. Part of the type safe query language
+  %>
   struct VirtualInstance {
     var keyPrefix: String
 
@@ -261,6 +310,10 @@ extension <%= type.name %> : ConcreteSerializable {
     }
   }
 
+  <%
+    // Keeps track of all references in this model
+    // Used for applying delete rules on references
+  %>
   var meowReferencesWithValue: [(key: String, destinationType: ConcreteModel.Type, deleteRule: DeleteRule.Type, id: ObjectId)] {
       var result = [(key: String, destinationType: ConcreteModel.Type, deleteRule: DeleteRule.Type, id: ObjectId)]()
       _ = result.popLast() // to silence the warning of not mutating above variable in the case of a type with no references
@@ -284,49 +337,70 @@ extension <%= type.name %> : ConcreteSerializable {
 }
 <% } %>
 
-<% for type in types.based["Model"] ?? [] { %>
-extension <%= type.name %> : ConcreteModel {
-    static let meowCollection = Meow.database["<%= type.name.lowercased() %>"]
 
-    static func find(matching closure: ((VirtualInstance) -> (Query))) throws -> Cursor<<%= type.name %>> {
-        let query = closure(VirtualInstance())
-        return try self.find(matching: query)
-    }
+<%
+  // For each model, generate a type safe query language and helpers for Vapor
+  for type in types.based["Model"] ?? [] {
+%>
+  extension <%= type.name %> : ConcreteModel {
+      static let meowCollection = Meow.database["<%= type.name.lowercased() %>"]
 
-    static func findOne(matching closure: ((VirtualInstance) -> (Query))) throws -> <%= type.name %>? {
-        let query = closure(VirtualInstance())
-        return try self.findOne(matching: query)
-    }
+      static func find(matching closure: ((VirtualInstance) -> (Query))) throws -> Cursor<<%= type.name %>> {
+          let query = closure(VirtualInstance())
+          return try self.find(matching: query)
+      }
 
-    static func count(matching closure: ((VirtualInstance) -> (Query))) throws -> Int {
-        let query = closure(VirtualInstance())
-        return try self.count(matching: query)
-    }
-}
+      static func findOne(matching closure: ((VirtualInstance) -> (Query))) throws -> <%= type.name %>? {
+          let query = closure(VirtualInstance())
+          return try self.findOne(matching: query)
+      }
 
-extension <%= type.name %> : StringInitializable {
-  public convenience init?(from string: String) throws {
-    guard let document = try <%= type.name %>.meowCollection.findOne(matching: "_id" == (try ObjectId(string))) else {
-      return nil
-    }
-
-    try self.init(fromDocument: document)
+      static func count(matching closure: ((VirtualInstance) -> (Query))) throws -> Int {
+          let query = closure(VirtualInstance())
+          return try self.count(matching: query)
+      }
   }
-}
 
-extension <%= type.name %> : ValueConvertible {
-  public func makeBSONPrimitive() -> BSONPrimitive {
-    return self.meowSerialize()
-  }
-}
+  <%
+    // Makes this model initializable by a String representing an ObjectId
+  %>
+  extension <%= type.name %> : StringInitializable {
+    public convenience init?(from string: String) throws {
+      guard let document = try <%= type.name %>.meowCollection.findOne(matching: "_id" == (try ObjectId(string))) else {
+        return nil
+      }
 
-extension <%= type.name %> : ResponseRepresentable {
-  public func makeResponse() -> Response {
-    return self.makeExtendedJSON().makeResponse()
+      try self.init(fromDocument: document)
+    }
   }
-}
+
+  <%
+    // Makes this model ValueConvertible so that it can be expressed as ExtendedJSON
+  %>
+  extension <%= type.name %> : ValueConvertible {
+    public func makeBSONPrimitive() -> BSONPrimitive {
+      return self.meowSerialize()
+    }
+  }
+
+  extension <%= type.name %> : ResponseRepresentable {
+    public func makeResponse() -> Response {
+      return self.makeExtendedJSON().makeResponse()
+    }
+  }
 <% } %>
 
+
+
+
+
+
+
+
+<%
+  // Adds helpers for Vapor's Droplet
+  // Generates routes based on your sourcery comments in models
+%>
 extension Droplet {
   public func start(_ mongoURL: String) throws -> Never {
     let meow = try Meow.init(mongoURL)

@@ -6,6 +6,7 @@ final class User: Model {
     var email: String = ""
     var name: String = ""
     var gender: Gender?
+    var favouriteNumbers: [Int] = []
     
     // sourcery: api=get,pathSuffix=/,permissions=anonymous
     static func list() throws -> Cursor<User> {

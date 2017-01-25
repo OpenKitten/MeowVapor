@@ -12,33 +12,34 @@ import MeowVapor
 
 
 
-  
-    // Optional(String)
-    extension Gender : ConcreteSingleValueSerializable {
-      init(value: ValueConvertible) throws {
-        let value: String = try Meow.Helpers.requireValue(value.makeBSONPrimitive() as? String, keyForError: "")
-        let me: Gender = try Meow.Helpers.requireValue(Gender(rawValue: value), keyForError: "")
+  extension Gender : ConcreteSingleValueSerializable {
+    
+    init(value: ValueConvertible) throws {
+      let value: String = try Meow.Helpers.requireValue(value.makeBSONPrimitive() as? String, keyForError: "")
+      let me: Gender = try Meow.Helpers.requireValue(Gender(rawValue: value), keyForError: "")
 
-        self = me
+      self = me
+    }
+
+    
+    func meowSerialize() -> ValueConvertible {
+      return self.rawValue
+    }
+
+    
+    struct VirtualInstance {
+      
+      static func ==(lhs: VirtualInstance, rhs: Gender) -> Query {
+        return lhs.keyPrefix == rhs.meowSerialize()
       }
 
-      func meowSerialize() -> ValueConvertible {
-        return self.rawValue
-      }
+      var keyPrefix: String
 
-      struct VirtualInstance {
-        static func ==(lhs: VirtualInstance, rhs: Gender) -> Query {
-          return lhs.keyPrefix == rhs.meowSerialize()
-        }
-
-        var keyPrefix: String
-
-        init(keyPrefix: String = "") {
-          self.keyPrefix = keyPrefix
-        }
+      init(keyPrefix: String = "") {
+        self.keyPrefix = keyPrefix
       }
     }
-  
+  }
 
 
 
@@ -51,43 +52,25 @@ extension User : ConcreteSerializable {
     
 
     
-      // id: ObjectId (ObjectId)
-      
-        
-      
-    
-      // email: String (String)
-      
-        
           doc["email"] = self.email
-        
-      
-    
-      // name: String (String)
-      
         
           doc["name"] = self.name
         
-      
-    
-      // gender: Gender? (Gender)
-      
-        
           doc[raw: "gender"] = self.gender?.meowSerialize()
         
-      
-    
+          doc["favouriteNumbers"] = self.favouriteNumbers
+        
 
     return doc
   }
 
+  
   convenience init(fromDocument source: Document) throws {
     var source = source
       // Extract all properties
       
       
         
-        // loop: id
 
         
           
@@ -96,7 +79,6 @@ extension User : ConcreteSerializable {
       
      
         
-        // loop: email
 
         
           
@@ -108,7 +90,6 @@ extension User : ConcreteSerializable {
       
      
         
-        // loop: name
 
         
           
@@ -120,7 +101,6 @@ extension User : ConcreteSerializable {
       
      
         
-        // loop: gender
 
         
           
@@ -137,8 +117,20 @@ extension User : ConcreteSerializable {
         
       
      
+        
 
-      // initializerkaas:
+        
+          
+             // The property is a BSON type, so we can just extract it from the document:
+             
+                  let favouriteNumbersValue: [Int] = try Meow.Helpers.requireValue(source.removeValue(forKey: "favouriteNumbers") as? [Int], keyForError: "favouriteNumbers")
+             
+          
+        
+     
+
+      // Uses the first existing initializer
+      // TODO: Support multiple/more complex initializers
       try self.init(
         
         
@@ -157,6 +149,7 @@ extension User : ConcreteSerializable {
         
       )
 
+      // Sets the other variables
       
       
         
@@ -179,8 +172,14 @@ extension User : ConcreteSerializable {
           self.gender = genderValue
         
       
+        
+        
+          self.favouriteNumbers = favouriteNumbersValue
+        
+      
   }
 
+  
   struct VirtualInstance {
     var keyPrefix: String
 
@@ -210,16 +209,25 @@ extension User : ConcreteSerializable {
         var gender: Gender.VirtualInstance { return Gender.VirtualInstance(keyPrefix: "gender.") }
       
     
+      
+      // favouriteNumbers: [Int]
+      
+        var favouriteNumbers: VirtualArray<VirtualNumber> { return VirtualArray<VirtualNumber>(name: keyPrefix + "favouriteNumbers") }
+      
+    
 
     init(keyPrefix: String = "") {
       self.keyPrefix = keyPrefix
     }
   }
 
+  
   var meowReferencesWithValue: [(key: String, destinationType: ConcreteModel.Type, deleteRule: DeleteRule.Type, id: ObjectId)] {
       var result = [(key: String, destinationType: ConcreteModel.Type, deleteRule: DeleteRule.Type, id: ObjectId)]()
       _ = result.popLast() // to silence the warning of not mutating above variable in the case of a type with no references
 
+      
+        
       
         
       
@@ -236,46 +244,57 @@ extension User : ConcreteSerializable {
 
 
 
-extension User : ConcreteModel {
-    static let meowCollection = Meow.database["user"]
 
-    static func find(matching closure: ((VirtualInstance) -> (Query))) throws -> Cursor<User> {
-        let query = closure(VirtualInstance())
-        return try self.find(matching: query)
-    }
+  extension User : ConcreteModel {
+      static let meowCollection = Meow.database["user"]
 
-    static func findOne(matching closure: ((VirtualInstance) -> (Query))) throws -> User? {
-        let query = closure(VirtualInstance())
-        return try self.findOne(matching: query)
-    }
+      static func find(matching closure: ((VirtualInstance) -> (Query))) throws -> Cursor<User> {
+          let query = closure(VirtualInstance())
+          return try self.find(matching: query)
+      }
 
-    static func count(matching closure: ((VirtualInstance) -> (Query))) throws -> Int {
-        let query = closure(VirtualInstance())
-        return try self.count(matching: query)
-    }
-}
+      static func findOne(matching closure: ((VirtualInstance) -> (Query))) throws -> User? {
+          let query = closure(VirtualInstance())
+          return try self.findOne(matching: query)
+      }
 
-extension User : StringInitializable {
-  public convenience init?(from string: String) throws {
-    guard let document = try User.meowCollection.findOne(matching: "_id" == (try ObjectId(string))) else {
-      return nil
-    }
-
-    try self.init(fromDocument: document)
+      static func count(matching closure: ((VirtualInstance) -> (Query))) throws -> Int {
+          let query = closure(VirtualInstance())
+          return try self.count(matching: query)
+      }
   }
-}
 
-extension User : ValueConvertible {
-  public func makeBSONPrimitive() -> BSONPrimitive {
-    return self.meowSerialize()
-  }
-}
+  
+  extension User : StringInitializable {
+    public convenience init?(from string: String) throws {
+      guard let document = try User.meowCollection.findOne(matching: "_id" == (try ObjectId(string))) else {
+        return nil
+      }
 
-extension User : ResponseRepresentable {
-  public func makeResponse() -> Response {
-    return self.makeExtendedJSON().makeResponse()
+      try self.init(fromDocument: document)
+    }
   }
-}
+
+  
+  extension User : ValueConvertible {
+    public func makeBSONPrimitive() -> BSONPrimitive {
+      return self.meowSerialize()
+    }
+  }
+
+  extension User : ResponseRepresentable {
+    public func makeResponse() -> Response {
+      return self.makeExtendedJSON().makeResponse()
+    }
+  }
+
+
+
+
+
+
+
+
 
 
 extension Droplet {

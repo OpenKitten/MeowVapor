@@ -10,4 +10,4 @@ drop.get("users", User.self) { _, user in
     return user
 }
 
-try! drop.start("mongodb://localhost/kaas")
+try! drop.start("monxxgodb://localhost/kaas")

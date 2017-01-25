@@ -1,26 +1,37 @@
 @_exported import MongoKitten
 import Vapor
 
-public protocol Model : class, Serializable {
+/// When implemented, indicated that this is a model that resides at the lowest level of a collection, as a separate entity.
+///
+/// Only requires an identifier
+///
+/// Embeddables will have a generated Virtual variant of itself for the type safe queries
+public protocol Model : Serializable {
+    /// The database identifier
     var id: ObjectId { get set }
 }
 
 public typealias ReferenceValues = [(key: String, destinationType: ConcreteModel.Type, deleteRule: DeleteRule.Type, id: ObjectId)]
 
+/// Should be implemented in an extension by the generator
+///
+/// When implemented, it exposes the collection where this entity resides in
 public protocol ConcreteModel : Model, ConcreteSerializable {
+    /// The collection this entity resides in
     static var meowCollection: MongoKitten.Collection { get }
+    
+    /// All references to foreign objects
     var meowReferencesWithValue: ReferenceValues { get }
 }
 
-public protocol FieldSet {
-    var fieldName: String { get }
-}
-
+/// Implementes basic CRUD functionality for the object
 extension ConcreteModel {
+    /// Counts the amount of objects matching the query
     public static func count(matching filter: Query? = nil, limitedTo limit: Int32? = nil, skipping skip: Int32? = nil) throws -> Int {
         return try meowCollection.count(matching: filter, limitedTo: limit, skipping: skip)
     }
     
+    /// Saves this object
     public func save() throws {
         let document = meowSerialize()
         
@@ -31,6 +42,7 @@ extension ConcreteModel {
         )
     }
     
+    /// Returns all objects matching the query
     public static func find(matching query: Query? = nil) throws -> Cursor<Self> {
         let originalCursor = try meowCollection.find(matching: query)
         
@@ -39,6 +51,7 @@ extension ConcreteModel {
         }
     }
     
+    /// Returns the first object matching the query
     public static func findOne(matching query: Query? = nil) throws -> Self? {
         return try Self.find(matching: query).makeIterator().next()
     }
@@ -93,6 +106,7 @@ extension ConcreteModel {
         return cascade
     }
     
+    /// Removes this object from the database
     public func delete() throws {
         try self.validateDeletion()()
     }

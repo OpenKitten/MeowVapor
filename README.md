@@ -20,6 +20,8 @@ touch Sources/Generated.swift
 swift package generate-xcodeproj
 ```
 
+[Or copy the example project at https://github.com/OpenKitten/MeowVaporExample](https://github.com/OpenKitten/MeowVaporExample)
+
 # Models
 
 First you'll have to create/edit your models. They need to be a class. They only require 2 things:
@@ -124,3 +126,12 @@ let owner = try group.owner.resolve()
 # This will update the boilerplate and type-safe queries code
 sourcery Sources Packages/MeowVapor-*/Templates Sources/Generated.swift
 ```
+
+Or during development:
+
+```bash
+# This will update the boilerplate and type-safe queries code
+sourcery Sources Packages/MeowVapor-*/Templates Sources/Generated.swift --watch
+```
+
+This will create a watcher to update every change to your models.

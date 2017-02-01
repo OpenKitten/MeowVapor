@@ -27,6 +27,11 @@ import MeowVapor
     }
 
     
+    func meowSerialize(resolvingReferences: Bool = false) throws -> ValueConvertible {
+      return self.rawValue
+    }
+
+    
     struct VirtualInstance {
       
       static func ==(lhs: VirtualInstance, rhs: Gender) -> Query {
@@ -45,6 +50,26 @@ import MeowVapor
 
 extension User : ConcreteSerializable {
   func meowSerialize() -> Document {
+    
+      var doc: Document = ["_id": self.id]
+    
+
+    
+
+    
+          doc["email"] = self.email
+        
+          doc["name"] = self.name
+        
+          doc[raw: "gender"] = self.gender?.meowSerialize()
+        
+          doc["favouriteNumbers"] = self.favouriteNumbers
+        
+
+    return doc
+  }
+
+  func meowSerialize(resolvingReferences: Bool) throws -> Document {
     
       var doc: Document = ["_id": self.id]
     
@@ -261,6 +286,13 @@ extension User : ConcreteSerializable {
       static func count(matching closure: ((VirtualInstance) -> (Query))) throws -> Int {
           let query = closure(VirtualInstance())
           return try self.count(matching: query)
+      }
+
+      static func createIndex(named name: String? = nil, withParameters closure: ((VirtualInstance, IndexSubject) -> ())) throws {
+        let indexSubject = IndexSubject()
+        closure(VirtualInstance(), indexSubject)
+
+        try meowCollection.createIndexes([(name: name ?? "", parameters: indexSubject.makeIndexParameters())])
       }
   }
 

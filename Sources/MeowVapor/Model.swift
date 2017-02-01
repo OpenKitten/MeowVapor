@@ -16,7 +16,7 @@ public typealias ReferenceValues = [(key: String, destinationType: ConcreteModel
 /// Should be implemented in an extension by the generator
 ///
 /// When implemented, it exposes the collection where this entity resides in
-public protocol ConcreteModel : Model, ConcreteSerializable {
+public protocol ConcreteModel : Model, ConcreteSerializable, ValueConvertible {
     /// The collection this entity resides in
     static var meowCollection: MongoKitten.Collection { get }
     
@@ -65,7 +65,7 @@ extension ConcreteModel {
         }
         
         return true
-    } 
+    }
     
     /// Validates if this object can be deleted
     ///

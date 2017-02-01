@@ -12,31 +12,39 @@ import MeowVapor
 
 
 
-  
-    // Optional(String)
-    extension Gender : ConcreteSingleValueSerializable {
-      init(value: ValueConvertible) throws {
-        let value: String = try Meow.Helpers.requireValue(value.makeBSONPrimitive() as? String, keyForError: "")
-        let me: Gender = try Meow.Helpers.requireValue(Gender(rawValue: value), keyForError: "")
+  extension Gender : ConcreteSingleValueSerializable {
+    
+    init(value: ValueConvertible) throws {
+      let value: String = try Meow.Helpers.requireValue(value.makeBSONPrimitive() as? String, keyForError: "")
+      let me: Gender = try Meow.Helpers.requireValue(Gender(rawValue: value), keyForError: "")
 
-        self = me
+      self = me
+    }
+
+    
+    func meowSerialize() -> ValueConvertible {
+      return self.rawValue
+    }
+
+    
+    func meowSerialize(resolvingReferences: Bool = false) throws -> ValueConvertible {
+      return self.rawValue
+    }
+
+    
+    struct VirtualInstance {
+      
+      static func ==(lhs: VirtualInstance, rhs: Gender) -> Query {
+        return lhs.keyPrefix == rhs.meowSerialize()
       }
 
-      func meowSerialize() -> ValueConvertible {
-        return self.rawValue
-      }
+      var keyPrefix: String
 
-      struct VirtualInstance {
-        var keyPrefix: String
-
-        
-
-        init(keyPrefix: String = "") {
-          self.keyPrefix = keyPrefix
-        }
+      init(keyPrefix: String = "") {
+        self.keyPrefix = keyPrefix
       }
     }
-  
+  }
 
 
 
@@ -49,57 +57,49 @@ extension User : ConcreteSerializable {
     
 
     
-      // id: ObjectId (ObjectId)
-      
-        
-      
-    
-      // username: String (String)
-      
-        
           doc["username"] = self.username
-        
-      
-    
-      // password: String (String)
-      
         
           doc["password"] = self.password
         
-      
-    
-      // age: Int? (Int)
-      
-        
           doc["age"] = self.age
-        
-      
-    
-      // gender: Gender? (Gender)
-      
         
           doc[raw: "gender"] = self.gender?.meowSerialize()
         
-      
-    
-      // details: Details? (Details)
-      
-        
           doc[raw: "details"] = self.details?.meowSerialize()
         
-      
-    
 
     return doc
   }
 
+  func meowSerialize(resolvingReferences: Bool) throws -> Document {
+    
+      var doc: Document = ["_id": self.id]
+    
+
+    
+
+    
+          doc["username"] = self.username
+        
+          doc["password"] = self.password
+        
+          doc["age"] = self.age
+        
+          doc[raw: "gender"] = self.gender?.meowSerialize()
+        
+          doc[raw: "details"] = self.details?.meowSerialize()
+        
+
+    return doc
+  }
+
+  
   convenience init(fromDocument source: Document) throws {
     var source = source
       // Extract all properties
       
       
         
-        // loop: id
 
         
           
@@ -108,7 +108,6 @@ extension User : ConcreteSerializable {
       
      
         
-        // loop: username
 
         
           
@@ -120,7 +119,6 @@ extension User : ConcreteSerializable {
       
      
         
-        // loop: password
 
         
           
@@ -132,7 +130,6 @@ extension User : ConcreteSerializable {
       
      
         
-        // loop: age
 
         
           
@@ -144,7 +141,6 @@ extension User : ConcreteSerializable {
       
      
         
-        // loop: gender
 
         
           
@@ -162,7 +158,6 @@ extension User : ConcreteSerializable {
       
      
         
-        // loop: details
 
         
           
@@ -181,7 +176,8 @@ extension User : ConcreteSerializable {
       
      
 
-      // initializerkaas:
+      // Uses the first existing initializer
+      // TODO: Support multiple/more complex initializers
       try self.init(
         
         
@@ -195,6 +191,7 @@ extension User : ConcreteSerializable {
         
       )
 
+      // Sets the other variables
       
       
         
@@ -229,6 +226,7 @@ extension User : ConcreteSerializable {
       
   }
 
+  
   struct VirtualInstance {
     var keyPrefix: String
 
@@ -276,6 +274,7 @@ extension User : ConcreteSerializable {
     }
   }
 
+  
   var meowReferencesWithValue: [(key: String, destinationType: ConcreteModel.Type, deleteRule: DeleteRule.Type, id: ObjectId)] {
       var result = [(key: String, destinationType: ConcreteModel.Type, deleteRule: DeleteRule.Type, id: ObjectId)]()
       _ = result.popLast() // to silence the warning of not mutating above variable in the case of a type with no references
@@ -307,31 +306,37 @@ extension Details : ConcreteSerializable {
     
 
     
-      // firstName: String? (String)
-      
-        
           doc["firstName"] = self.firstName
-        
-      
-    
-      // lastName: String? (String)
-      
         
           doc["lastName"] = self.lastName
         
-      
-    
 
     return doc
   }
 
+  func meowSerialize(resolvingReferences: Bool) throws -> Document {
+    
+    var doc = Document()
+    
+
+    
+
+    
+          doc["firstName"] = self.firstName
+        
+          doc["lastName"] = self.lastName
+        
+
+    return doc
+  }
+
+  
   convenience init(fromDocument source: Document) throws {
     var source = source
       // Extract all properties
       
       
         
-        // loop: firstName
 
         
           
@@ -343,7 +348,6 @@ extension Details : ConcreteSerializable {
       
      
         
-        // loop: lastName
 
         
           
@@ -355,12 +359,14 @@ extension Details : ConcreteSerializable {
       
      
 
-      // initializerkaas:
+      // Uses the first existing initializer
+      // TODO: Support multiple/more complex initializers
       try self.init(
         
         
       )
 
+      // Sets the other variables
       
       
         
@@ -375,6 +381,7 @@ extension Details : ConcreteSerializable {
       
   }
 
+  
   struct VirtualInstance {
     var keyPrefix: String
 
@@ -398,6 +405,7 @@ extension Details : ConcreteSerializable {
     }
   }
 
+  
   var meowReferencesWithValue: [(key: String, destinationType: ConcreteModel.Type, deleteRule: DeleteRule.Type, id: ObjectId)] {
       var result = [(key: String, destinationType: ConcreteModel.Type, deleteRule: DeleteRule.Type, id: ObjectId)]()
       _ = result.popLast() // to silence the warning of not mutating above variable in the case of a type with no references
@@ -414,46 +422,64 @@ extension Details : ConcreteSerializable {
 
 
 
-extension User : ConcreteModel {
-    static let meowCollection = Meow.database["user"]
 
-    static func find(matching closure: ((VirtualInstance) -> (Query))) throws -> Cursor<User> {
-        let query = closure(VirtualInstance())
-        return try self.find(matching: query)
-    }
+  extension User : ConcreteModel {
+      static let meowCollection = Meow.database["user"]
 
-    static func findOne(matching closure: ((VirtualInstance) -> (Query))) throws -> User? {
-        let query = closure(VirtualInstance())
-        return try self.findOne(matching: query)
-    }
+      static func find(matching closure: ((VirtualInstance) -> (Query))) throws -> Cursor<User> {
+          let query = closure(VirtualInstance())
+          return try self.find(matching: query)
+      }
 
-    static func count(matching closure: ((VirtualInstance) -> (Query))) throws -> Int {
-        let query = closure(VirtualInstance())
-        return try self.count(matching: query)
-    }
-}
+      static func findOne(matching closure: ((VirtualInstance) -> (Query))) throws -> User? {
+          let query = closure(VirtualInstance())
+          return try self.findOne(matching: query)
+      }
 
-extension User : StringInitializable {
-  public convenience init?(from string: String) throws {
-    guard let document = try User.meowCollection.findOne(matching: "_id" == (try ObjectId(string))) else {
-      return nil
-    }
+      static func count(matching closure: ((VirtualInstance) -> (Query))) throws -> Int {
+          let query = closure(VirtualInstance())
+          return try self.count(matching: query)
+      }
 
-    try self.init(fromDocument: document)
+      static func createIndex(named name: String? = nil, withParameters closure: ((VirtualInstance, IndexSubject) -> ())) throws {
+        let indexSubject = IndexSubject()
+        closure(VirtualInstance(), indexSubject)
+
+        try meowCollection.createIndexes([(name: name ?? "", parameters: indexSubject.makeIndexParameters())])
+      }
   }
-}
 
-extension User : ValueConvertible {
-  public func makeBSONPrimitive() -> BSONPrimitive {
-    return self.meowSerialize()
-  }
-}
+  
+  extension User : StringInitializable {
+    public convenience init?(from string: String) throws {
+      guard let document = try User.meowCollection.findOne(matching: "_id" == (try ObjectId(string))) else {
+        return nil
+      }
 
-extension User : ResponseRepresentable {
-  public func makeResponse() -> Response {
-    return self.makeExtendedJSON().makeResponse()
+      try self.init(fromDocument: document)
+    }
   }
-}
+
+  
+  extension User : ValueConvertible {
+    public func makeBSONPrimitive() -> BSONPrimitive {
+      return self.meowSerialize()
+    }
+  }
+
+  extension User : ResponseRepresentable {
+    public func makeResponse() -> Response {
+      return self.makeExtendedJSON().makeResponse()
+    }
+  }
+
+
+
+
+
+
+
+
 
 
 extension Droplet {

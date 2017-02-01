@@ -18,3 +18,11 @@ extension Cursor: ResponseRepresentable {
             }).makeExtendedJSON().makeResponse()
     }
 }
+
+extension Cursor where T : ConcreteModel {
+    public func makeResponse(resolvingReferences: Bool) throws -> Response {
+        return Document(array: try Array(self).flatMap {
+            try $0.meowSerialize(resolvingReferences: resolvingReferences)
+        }).makeExtendedJSON().makeResponse()
+    }
+}

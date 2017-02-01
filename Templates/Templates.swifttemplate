@@ -38,6 +38,13 @@ let serializables = classes + structs
     }
 
     <%
+      // Serializes this enum case to a BSON type
+    %>
+    func meowSerialize(resolvingReferences: Bool = false) throws -> ValueConvertible {
+      return self.rawValue
+    }
+
+    <%
       // Generates a type safe query object for this enum type
     %>
     struct VirtualInstance {
@@ -122,7 +129,85 @@ extension <%= type.name %> : ConcreteSerializable {
           // If this is a single reference
           } else if variable.typeName.name.hasPrefix("Reference") {
         %>
-          doc["<%= variable.name %>"] = self.<%= variable.name %><% if variable.typeName.isOptional { %>?<% } %>.id
+            doc["<%= variable.name %>"] = self.<%= variable.name %><% if variable.typeName.isOptional { %>?<% } %>.id
+        <% } else if variable.type?.based["Embeddable"] != nil { %>
+          doc[raw: "<%= variable.name %>"] = self.<%= variable.name %><% if variable.typeName.isOptional { %>?<% } %>.meowSerialize()
+        <%
+        }
+      }
+    } %>
+
+    return doc
+  }
+
+  func meowSerialize(resolvingReferences: Bool) throws -> Document {
+    <%
+      // Add the _id for models
+      if type.based["Model"] != nil {
+    %>
+      var doc: Document = ["_id": self.id]
+    <% } else { %>
+    var doc = Document()
+    <% } %>
+
+    <%
+      // If this is a DynamicSerializable object, apply the additionalFields fields that don't reside inside the schema
+      if type.based["DynamicSerializable"] != nil {
+    %>
+      doc += self.additionalFields
+    <% } %>
+
+    <%
+      // Loops over all variables in this Model/Embeddable and serializes them to the output document
+      for variable in type.allVariables {
+        // If this is an array
+        if variable.typeName.unwrappedTypeName.hasPrefix("[") && variable.typeName.unwrappedTypeName.hasSuffix("]") {
+
+          // If it's an array of ValueConvertible types
+          if variable.typeName.unwrappedTypeName == "[String]"
+           || variable.typeName.unwrappedTypeName == "[Data]"
+           || variable.typeName.unwrappedTypeName == "[Date]"
+           || variable.typeName.unwrappedTypeName == "[Bool]"
+           || variable.name != "id" && variable.typeName.unwrappedTypeName == "[ObjectId]"
+           || variable.typeName.unwrappedTypeName == "[Double]"
+           || variable.typeName.unwrappedTypeName == "[Int32]"
+           || variable.typeName.unwrappedTypeName == "[Int64]"
+           || variable.typeName.unwrappedTypeName == "[Int]" {
+             %>
+          doc["<%= variable.name %>"] = self.<%= variable.name %>
+        <%
+        // If it's an array of references
+          } else if variable.typeName.name.hasPrefix("[Reference") { %>
+          if resolvingReferences {
+            doc["<%= variable.name %>"] = self.<%= variable.name %><% if variable.typeName.isOptional { %>?<% } %>.map { $0.id }
+          } else {
+            doc[raw: "<%= variable.name %>"] = try self.<%= variable.name %><% if variable.typeName.isOptional { %>?<% } %>.map { try $0.resolve() as ValueConvertible }
+          }
+       <% }
+        // TODO: Support [Embeddable]?
+
+        // If this is not an array
+        } else {
+          // If the type is a BSON primitive type
+          if variable.typeName.unwrappedTypeName == "String"
+           || variable.typeName.unwrappedTypeName == "Data"
+           || variable.typeName.unwrappedTypeName == "Date"
+           || variable.typeName.unwrappedTypeName == "Bool"
+           || variable.name != "id" && variable.typeName.unwrappedTypeName == "ObjectId"
+           || variable.typeName.unwrappedTypeName == "Double"
+           || variable.typeName.unwrappedTypeName == "Int32"
+           || variable.typeName.unwrappedTypeName == "Int64"
+           || variable.typeName.unwrappedTypeName == "Int" { %>
+          doc["<%= variable.name %>"] = self.<%= variable.name %>
+        <%
+          // If this is a single reference
+          } else if variable.typeName.name.hasPrefix("Reference") {
+        %>
+          if resolvingReferences {
+            doc["<%= variable.name %>"] = self.<%= variable.name %><% if variable.typeName.isOptional { %>?<% } %>.id
+          } else {
+            doc[raw: "<%= variable.name %>"] = try self.<%= variable.name %><% if variable.typeName.isOptional { %>?<% } %>.resolve()
+          }
         <% } else if variable.type?.based["Embeddable"] != nil { %>
           doc[raw: "<%= variable.name %>"] = self.<%= variable.name %><% if variable.typeName.isOptional { %>?<% } %>.meowSerialize()
         <%
@@ -358,6 +443,13 @@ extension <%= type.name %> : ConcreteSerializable {
       static func count(matching closure: ((VirtualInstance) -> (Query))) throws -> Int {
           let query = closure(VirtualInstance())
           return try self.count(matching: query)
+      }
+
+      static func createIndex(named name: String? = nil, withParameters closure: ((VirtualInstance, IndexSubject) -> ())) throws {
+        let indexSubject = IndexSubject()
+        closure(VirtualInstance(), indexSubject)
+
+        try meowCollection.createIndexes([(name: name ?? "", parameters: indexSubject.makeIndexParameters())])
       }
   }
 

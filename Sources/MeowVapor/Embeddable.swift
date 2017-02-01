@@ -21,10 +21,12 @@ public protocol DynamicSerializable {
 /// When implemented, it allows conversion to and from a Document
 public protocol ConcreteSerializable {
     init(fromDocument source: Document) throws
+    func meowSerialize(resolvingReferences: Bool) throws -> Document
     func meowSerialize() -> Document
 }
 
 public protocol ConcreteSingleValueSerializable {
+    func meowSerialize(resolvingReferences: Bool) throws -> ValueConvertible
     func meowSerialize() -> ValueConvertible
 }
 

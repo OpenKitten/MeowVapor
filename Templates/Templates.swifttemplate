@@ -179,9 +179,9 @@ extension <%= type.name %> : ConcreteSerializable {
         // If it's an array of references
           } else if variable.typeName.name.hasPrefix("[Reference") { %>
           if resolvingReferences {
-            doc["<%= variable.name %>"] = self.<%= variable.name %><% if variable.typeName.isOptional { %>?<% } %>.map { $0.id }
-          } else {
             doc[raw: "<%= variable.name %>"] = try self.<%= variable.name %><% if variable.typeName.isOptional { %>?<% } %>.map { try $0.resolve() as ValueConvertible }
+          } else {
+            doc["<%= variable.name %>"] = self.<%= variable.name %><% if variable.typeName.isOptional { %>?<% } %>.map { $0.id }
           }
        <% }
         // TODO: Support [Embeddable]?
@@ -204,9 +204,9 @@ extension <%= type.name %> : ConcreteSerializable {
           } else if variable.typeName.name.hasPrefix("Reference") {
         %>
           if resolvingReferences {
-            doc["<%= variable.name %>"] = self.<%= variable.name %><% if variable.typeName.isOptional { %>?<% } %>.id
-          } else {
             doc[raw: "<%= variable.name %>"] = try self.<%= variable.name %><% if variable.typeName.isOptional { %>?<% } %>.resolve()
+          } else {
+            doc["<%= variable.name %>"] = self.<%= variable.name %><% if variable.typeName.isOptional { %>?<% } %>.id
           }
         <% } else if variable.type?.based["Embeddable"] != nil { %>
           doc[raw: "<%= variable.name %>"] = self.<%= variable.name %><% if variable.typeName.isOptional { %>?<% } %>.meowSerialize()

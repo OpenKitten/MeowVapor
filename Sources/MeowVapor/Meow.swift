@@ -21,7 +21,7 @@ public enum Meow {
     
     /// Initializes the static Meow database state with a MongoKitten.Database from a connection string
     public static func `init`(_ connectionString: String) throws {
-        Meow.init(try Database(mongoURL: connectionString))
+        Meow.init(try Database(connectionString))
     }
     
     /// Helpers for the generator

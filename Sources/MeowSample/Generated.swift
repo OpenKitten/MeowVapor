@@ -1,4 +1,4 @@
-// Generated using Sourcery 0.5.3 — https://github.com/krzysztofzablocki/Sourcery
+// Generated using Sourcery 0.5.8 — https://github.com/krzysztofzablocki/Sourcery
 // DO NOT EDIT
 
 
@@ -11,23 +11,235 @@ import MeowVapor
 
 
 
+extension Array where Element == ObjectId {
+  init?(_ primitive: Primitive?) {
+    guard let doc = Document(primitive) else {
+      return nil
+    }
+
+    let schrodingerSelf = try? doc.arrayValue.map { primitive in
+      return try Meow.Helpers.requireValue(ObjectId(primitive), keyForError: "")
+    }
+
+    guard let me = schrodingerSelf else {
+      return nil
+    }
+
+    self = me
+  }
+}
+    
+
+extension Array where Element == String {
+  init?(_ primitive: Primitive?) {
+    guard let doc = Document(primitive) else {
+      return nil
+    }
+
+    let schrodingerSelf = try? doc.arrayValue.map { primitive in
+      return try Meow.Helpers.requireValue(String(primitive), keyForError: "")
+    }
+
+    guard let me = schrodingerSelf else {
+      return nil
+    }
+
+    self = me
+  }
+}
+    
+
+extension Array where Element == Int {
+  init?(_ primitive: Primitive?) {
+    guard let doc = Document(primitive) else {
+      return nil
+    }
+
+    let schrodingerSelf = try? doc.arrayValue.map { primitive in
+      return try Meow.Helpers.requireValue(Int(primitive), keyForError: "")
+    }
+
+    guard let me = schrodingerSelf else {
+      return nil
+    }
+
+    self = me
+  }
+}
+    
+
+extension Array where Element == Int32 {
+  init?(_ primitive: Primitive?) {
+    guard let doc = Document(primitive) else {
+      return nil
+    }
+
+    let schrodingerSelf = try? doc.arrayValue.map { primitive in
+      return try Meow.Helpers.requireValue(Int32(primitive), keyForError: "")
+    }
+
+    guard let me = schrodingerSelf else {
+      return nil
+    }
+
+    self = me
+  }
+}
+    
+
+extension Array where Element == Bool {
+  init?(_ primitive: Primitive?) {
+    guard let doc = Document(primitive) else {
+      return nil
+    }
+
+    let schrodingerSelf = try? doc.arrayValue.map { primitive in
+      return try Meow.Helpers.requireValue(Bool(primitive), keyForError: "")
+    }
+
+    guard let me = schrodingerSelf else {
+      return nil
+    }
+
+    self = me
+  }
+}
+    
+
+extension Array where Element == Document {
+  init?(_ primitive: Primitive?) {
+    guard let doc = Document(primitive) else {
+      return nil
+    }
+
+    let schrodingerSelf = try? doc.arrayValue.map { primitive in
+      return try Meow.Helpers.requireValue(Document(primitive), keyForError: "")
+    }
+
+    guard let me = schrodingerSelf else {
+      return nil
+    }
+
+    self = me
+  }
+}
+    
+
+extension Array where Element == Double {
+  init?(_ primitive: Primitive?) {
+    guard let doc = Document(primitive) else {
+      return nil
+    }
+
+    let schrodingerSelf = try? doc.arrayValue.map { primitive in
+      return try Meow.Helpers.requireValue(Double(primitive), keyForError: "")
+    }
+
+    guard let me = schrodingerSelf else {
+      return nil
+    }
+
+    self = me
+  }
+}
+    
+
+extension Array where Element == Data {
+  init?(_ primitive: Primitive?) {
+    guard let doc = Document(primitive) else {
+      return nil
+    }
+
+    let schrodingerSelf = try? doc.arrayValue.map { primitive in
+      return try Meow.Helpers.requireValue(Data(primitive), keyForError: "")
+    }
+
+    guard let me = schrodingerSelf else {
+      return nil
+    }
+
+    self = me
+  }
+}
+    
+
+extension Array where Element == Binary {
+  init?(_ primitive: Primitive?) {
+    guard let doc = Document(primitive) else {
+      return nil
+    }
+
+    let schrodingerSelf = try? doc.arrayValue.map { primitive in
+      return try Meow.Helpers.requireValue(Binary(primitive), keyForError: "")
+    }
+
+    guard let me = schrodingerSelf else {
+      return nil
+    }
+
+    self = me
+  }
+}
+    
+
+extension Array where Element == Date {
+  init?(_ primitive: Primitive?) {
+    guard let doc = Document(primitive) else {
+      return nil
+    }
+
+    let schrodingerSelf = try? doc.arrayValue.map { primitive in
+      return try Meow.Helpers.requireValue(Date(primitive), keyForError: "")
+    }
+
+    guard let me = schrodingerSelf else {
+      return nil
+    }
+
+    self = me
+  }
+}
+    
+
+extension Array where Element == RegularExpression {
+  init?(_ primitive: Primitive?) {
+    guard let doc = Document(primitive) else {
+      return nil
+    }
+
+    let schrodingerSelf = try? doc.arrayValue.map { primitive in
+      return try Meow.Helpers.requireValue(RegularExpression(primitive), keyForError: "")
+    }
+
+    guard let me = schrodingerSelf else {
+      return nil
+    }
+
+    self = me
+  }
+}
+    
+
+
+
 
   extension Gender : ConcreteSingleValueSerializable {
     
-    init(value: ValueConvertible) throws {
-      let value: String = try Meow.Helpers.requireValue(value.makeBSONPrimitive() as? String, keyForError: "")
-      let me: Gender = try Meow.Helpers.requireValue(Gender(rawValue: value), keyForError: "")
+    init(value: Primitive?) throws {
+      let value = try Meow.Helpers.requireValue(value, keyForError: "")
+      let primitiveValue: String = try Meow.Helpers.requireValue(String(value), keyForError: "")
+      let me: Gender = try Meow.Helpers.requireValue(Gender(rawValue: primitiveValue), keyForError: "")
 
       self = me
     }
 
     
-    func meowSerialize() -> ValueConvertible {
+    func meowSerialize() -> Primitive {
       return self.rawValue
     }
 
     
-    func meowSerialize(resolvingReferences: Bool = false) throws -> ValueConvertible {
+    func meowSerialize(resolvingReferences: Bool = false) throws -> Primitive {
       return self.rawValue
     }
 
@@ -50,23 +262,7 @@ import MeowVapor
 
 extension User : ConcreteSerializable {
   func meowSerialize() -> Document {
-    
-      var doc: Document = ["_id": self.id]
-    
-
-    
-
-    
-          doc["email"] = self.email
-        
-          doc["name"] = self.name
-        
-          doc[raw: "gender"] = self.gender?.meowSerialize()
-        
-          doc["favouriteNumbers"] = self.favouriteNumbers
-        
-
-    return doc
+    return (try? self.meowSerialize(resolvingReferences: false) ) ?? Document()
   }
 
   func meowSerialize(resolvingReferences: Bool) throws -> Document {
@@ -77,14 +273,16 @@ extension User : ConcreteSerializable {
     
 
     
+          doc["id"] = self.id
+        
           doc["email"] = self.email
         
           doc["name"] = self.name
         
-          doc[raw: "gender"] = self.gender?.meowSerialize()
-        
-          doc["favouriteNumbers"] = self.favouriteNumbers
-        
+            // Variable: name = gender, typeName = Gender?, isComputed = false, isStatic = false, readAccess = internal, writeAccess = internal, annotations = [:], attributes = [:]
+            
+            // Variable: name = favouriteNumbers, typeName = [Int], isComputed = false, isStatic = false, readAccess = internal, writeAccess = internal, annotations = [:], attributes = [:]
+            
 
     return doc
   }
@@ -96,37 +294,36 @@ extension User : ConcreteSerializable {
       
       
         
-
-        
-          
-            let idValue: ObjectId = try Meow.Helpers.requireValue(source.removeValue(forKey: "_id") as? ObjectId, keyForError: "id")
-        
-      
-     
-        
-
         
           
              // The property is a BSON type, so we can just extract it from the document:
              
-                  let emailValue: String = try Meow.Helpers.requireValue(source.removeValue(forKey: "email") as? String, keyForError: "email")
+                  let idValue: ObjectId = try Meow.Helpers.requireValue(ObjectId(source.removeValue(forKey: "id")), keyForError: "id")
              
           
       
      
         
-
         
           
              // The property is a BSON type, so we can just extract it from the document:
              
-                  let nameValue: String = try Meow.Helpers.requireValue(source.removeValue(forKey: "name") as? String, keyForError: "name")
+                  let emailValue: String = try Meow.Helpers.requireValue(String(source.removeValue(forKey: "email")), keyForError: "email")
              
           
       
      
         
-
+        
+          
+             // The property is a BSON type, so we can just extract it from the document:
+             
+                  let nameValue: String = try Meow.Helpers.requireValue(String(source.removeValue(forKey: "name")), keyForError: "name")
+             
+          
+      
+     
+        
         
           
           
@@ -143,14 +340,11 @@ extension User : ConcreteSerializable {
       
      
         
-
         
-          
-             // The property is a BSON type, so we can just extract it from the document:
-             
-                  let favouriteNumbersValue: [Int] = try Meow.Helpers.requireValue(source.removeValue(forKey: "favouriteNumbers") as? [Int], keyForError: "favouriteNumbers")
-             
-          
+           // The property is a BSON type, so we can just extract it from the document:
+           
+                let favouriteNumbersValue: [Int] = try Meow.Helpers.requireValue([Int](source.removeValue(forKey: "favouriteNumbers")), keyForError: "favouriteNumbers")
+           
         
      
 
@@ -275,17 +469,17 @@ extension User : ConcreteSerializable {
 
       static func find(matching closure: ((VirtualInstance) -> (Query))) throws -> Cursor<User> {
           let query = closure(VirtualInstance())
-          return try self.find(matching: query)
+          return try self.find(query)
       }
 
       static func findOne(matching closure: ((VirtualInstance) -> (Query))) throws -> User? {
           let query = closure(VirtualInstance())
-          return try self.findOne(matching: query)
+          return try self.findOne(query)
       }
 
       static func count(matching closure: ((VirtualInstance) -> (Query))) throws -> Int {
           let query = closure(VirtualInstance())
-          return try self.count(matching: query)
+          return try self.count(query)
       }
 
       static func createIndex(named name: String? = nil, withParameters closure: ((VirtualInstance, IndexSubject) -> ())) throws {
@@ -299,7 +493,7 @@ extension User : ConcreteSerializable {
   
   extension User : StringInitializable {
     public convenience init?(from string: String) throws {
-      guard let document = try User.meowCollection.findOne(matching: "_id" == (try ObjectId(string))) else {
+      guard let document = try User.meowCollection.findOne("_id" == (try ObjectId(string))) else {
         return nil
       }
 
@@ -308,160 +502,164 @@ extension User : ConcreteSerializable {
   }
 
   
-  extension User : ValueConvertible {
-    public func makeBSONPrimitive() -> BSONPrimitive {
-      return self.meowSerialize()
-    }
-  }
-
-  extension User : ResponseRepresentable {
-    public func makeResponse() -> Response {
-      return self.makeExtendedJSON().makeResponse()
-    }
-  }
-
-
-
-
-
-
-
+//   extension User : Primitive {
+//     public var typeIdentifier: UInt8 {
+//       return 0x03
+//     }
+//
+//     public func makeBinary() -> [UInt8] {
+//       return self.meowSerialize().makeBinary()
+//     }
+//   }
+//
+//   extension User : ResponseRepresentable {
+//     public func makeResponse() -> Response {
+//       return self.makeExtendedJSON().makeResponse()
+//     }
+//   }
+// 
 
 
 
-extension Droplet {
-  public func start(_ mongoURL: String) throws -> Never {
-    let meow = try Meow.init(mongoURL)
 
-    
-      
-        
-          self.get("users", "/") { request in
-        
 
-        
 
-        
 
-        
-        // TODO: Reverse isVoid when that works
-           let responseObject = try User.list(
-            
-          )
 
-          
-            
-              return responseObject
-            
-          
-        
-          }
-      
-        
-          self.get("users", "filtered") { request in
-        
 
-        
-          
-            guard let query = request.query, case .object(let parameters) = query else {
-                return Response(status: .badRequest)
-            }
-          
-
-          
-            
-
-              
-                guard let email = parameters["email"]?.string else {
-                  return Response(status: .badRequest)
-                }
-              
-            
-          
-        
-
-        
-
-        
-        // TODO: Reverse isVoid when that works
-           let responseObject = try User.find(
-            
-              email: email
-              
-            
-          )
-
-          
-            
-              return try Meow.Helpers.requireValue(responseObject, keyForError: "")
-            
-          
-        
-          }
-      
-        
-          self.get("users", "containing") { request in
-        
-
-        
-          
-            guard let query = request.query, case .object(let parameters) = query else {
-                return Response(status: .badRequest)
-            }
-          
-
-          
-            
-
-              
-                guard let email = parameters["email"]?.string else {
-                  return Response(status: .badRequest)
-                }
-              
-            
-          
-        
-
-        
-
-        
-        // TODO: Reverse isVoid when that works
-           let responseObject = try User.find(
-            
-              email: email
-              
-            
-          )
-
-          
-            
-              return try Meow.Helpers.requireValue(responseObject, keyForError: "")
-            
-          
-        
-          }
-      
-        
-          self.delete("users", User.self, "/") { request, model in
-        
-
-        
-
-        
-
-        
-        // TODO: Reverse isVoid when that works
-           try model.remove(
-            
-          )
-
-            
-              return Response(status: .ok)
-            
-          
-          }
-      
-    
-    self.run()
-  }
-}
+// extension Droplet {
+//   public func start(_ mongoURL: String) throws -> Never {
+//     let meow = try Meow.init(mongoURL)
+//
+//     
+//       
+//         
+//           self.get("users", "/") { request in
+//         
+//
+//         
+//
+//         
+//
+//         
+//         // TODO: Reverse isVoid when that works
+//            let responseObject = try User.list(
+//             
+//           )
+//
+//           
+//             
+//               return responseObject
+//             
+//           
+//         
+//           }
+//       
+//         
+//           self.get("users", "filtered") { request in
+//         
+//
+//         
+//           
+//             guard let query = request.query, case .object(let parameters) = query else {
+//                 return Response(status: .badRequest)
+//             }
+//           
+//
+//           
+//             
+//
+//               
+//                 guard let email = parameters["email"]?.string else {
+//                   return Response(status: .badRequest)
+//                 }
+//               
+//             
+//           
+//         
+//
+//         
+//
+//         
+//         // TODO: Reverse isVoid when that works
+//            let responseObject = try User.find(
+//             
+//               email: email
+//               
+//             
+//           )
+//
+//           
+//             
+//               return try Meow.Helpers.requireValue(responseObject, keyForError: "")
+//             
+//           
+//         
+//           }
+//       
+//         
+//           self.get("users", "containing") { request in
+//         
+//
+//         
+//           
+//             guard let query = request.query, case .object(let parameters) = query else {
+//                 return Response(status: .badRequest)
+//             }
+//           
+//
+//           
+//             
+//
+//               
+//                 guard let email = parameters["email"]?.string else {
+//                   return Response(status: .badRequest)
+//                 }
+//               
+//             
+//           
+//         
+//
+//         
+//
+//         
+//         // TODO: Reverse isVoid when that works
+//            let responseObject = try User.find(
+//             
+//               email: email
+//               
+//             
+//           )
+//
+//           
+//             
+//               return try Meow.Helpers.requireValue(responseObject, keyForError: "")
+//             
+//           
+//         
+//           }
+//       
+//         
+//           self.delete("users", User.self, "/") { request, model in
+//         
+//
+//         
+//
+//         
+//
+//         
+//         // TODO: Reverse isVoid when that works
+//            try model.remove(
+//             
+//           )
+//
+//             
+//               return Response(status: .ok)
+//             
+//           
+//           }
+//       
+//     
+//     self.run()
+//   }
+// }

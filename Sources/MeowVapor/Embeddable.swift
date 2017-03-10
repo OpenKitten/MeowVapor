@@ -26,8 +26,8 @@ public protocol ConcreteSerializable {
 }
 
 public protocol ConcreteSingleValueSerializable {
-    func meowSerialize(resolvingReferences: Bool) throws -> ValueConvertible
-    func meowSerialize() -> ValueConvertible
+    func meowSerialize(resolvingReferences: Bool) throws -> Primitive
+    func meowSerialize() -> Primitive
 }
 
 /// An empty protocol indicating that this is not a Model but a value that lies embedded in a model

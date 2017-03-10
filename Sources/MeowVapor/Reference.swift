@@ -35,7 +35,7 @@ public final class Reference<M : ConcreteModel, D : DeleteRule> {
     
     /// Resolves this reference to a concretre object and throws if it doesn't exist (anymore)
     public func resolve() throws -> M {
-        guard let instance = try M.findOne(matching: "_id" == id) else {
+        guard let instance = try M.findOne("_id" == id) else {
             throw Meow.Error.referenceError(id: id, type: M.self)
         }
         

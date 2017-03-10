@@ -8,6 +8,33 @@ import MeowVapor
 let classes = (types.classes.based["Model"] ?? []) + (types.classes.based["Embeddable"] ?? [])
 let structs = (types.structs.based["Model"] ?? []) + (types.structs.based["Embeddable"] ?? [])
 let serializables = classes + structs
+
+let supportedPrimitives = ["ObjectId", "String", "Int", "Int32", "Bool", "Document", "Double", "Data", "Binary", "Date", "RegularExpression"]
+%>
+
+<%
+  for primitive in supportedPrimitives {
+    %>
+
+extension Array where Element == <%= primitive %> {
+  init?(_ primitive: Primitive?) {
+    guard let doc = Document(primitive) else {
+      return nil
+    }
+
+    let schrodingerSelf = try? doc.arrayValue.map { primitive in
+      return try Meow.Helpers.requireValue(<%= primitive %>(primitive), keyForError: "")
+    }
+
+    guard let me = schrodingerSelf else {
+      return nil
+    }
+
+    self = me
+  }
+}
+    <%
+  }
 %>
 
 <%
@@ -17,15 +44,16 @@ let serializables = classes + structs
 
 <%
   // Selects all enums that are embeddable and generates a ype safe query for them, as well as it's conversion to a BSONValue
-  for type in types.enums where type.based["Embeddable"] != nil && type.rawTypeName != nil {
+  for type in types.enums where type.based["Embeddable"] != nil && type.rawTypeName != nil && supportedPrimitives.contains(type.rawTypeName!.name) {
 %>
   extension <%= type.name %> : ConcreteSingleValueSerializable {
     <%
-      // Creates this type from a BSON ValueConvertible
+      // Creates this type from a BSON Primitive
     %>
-    init(value: ValueConvertible) throws {
-      let value: <%= type.rawTypeName! %> = try Meow.Helpers.requireValue(value.makeBSONPrimitive() as? <%= type.rawTypeName! %>, keyForError: "")
-      let me: <%= type.name %> = try Meow.Helpers.requireValue(<%= type.name %>(rawValue: value), keyForError: "")
+    init(value: Primitive?) throws {
+      let value = try Meow.Helpers.requireValue(value, keyForError: "")
+      let primitiveValue: <%= type.rawTypeName! %> = try Meow.Helpers.requireValue(<%= type.rawTypeName! %>(value), keyForError: "")
+      let me: <%= type.name %> = try Meow.Helpers.requireValue(<%= type.name %>(rawValue: primitiveValue), keyForError: "")
 
       self = me
     }
@@ -33,14 +61,14 @@ let serializables = classes + structs
     <%
       // Serializes this enum case to a BSON type
     %>
-    func meowSerialize() -> ValueConvertible {
+    func meowSerialize() -> Primitive {
       return self.rawValue
     }
 
     <%
       // Serializes this enum case to a BSON type
     %>
-    func meowSerialize(resolvingReferences: Bool = false) throws -> ValueConvertible {
+    func meowSerialize(resolvingReferences: Bool = false) throws -> Primitive {
       return self.rawValue
     }
 
@@ -71,73 +99,7 @@ let serializables = classes + structs
 %>
 extension <%= type.name %> : ConcreteSerializable {
   func meowSerialize() -> Document {
-    <%
-      // Add the _id for models
-      if type.based["Model"] != nil {
-    %>
-      var doc: Document = ["_id": self.id]
-    <% } else { %>
-    var doc = Document()
-    <% } %>
-
-    <%
-      // If this is a DynamicSerializable object, apply the additionalFields fields that don't reside inside the schema
-      if type.based["DynamicSerializable"] != nil {
-    %>
-      doc += self.additionalFields
-    <% } %>
-
-    <%
-      // Loops over all variables in this Model/Embeddable and serializes them to the output document
-      for variable in type.allVariables {
-        // If this is an array
-        if variable.typeName.unwrappedTypeName.hasPrefix("[") && variable.typeName.unwrappedTypeName.hasSuffix("]") {
-
-          // If it's an array of ValueConvertible types
-          if variable.typeName.unwrappedTypeName == "[String]"
-           || variable.typeName.unwrappedTypeName == "[Data]"
-           || variable.typeName.unwrappedTypeName == "[Date]"
-           || variable.typeName.unwrappedTypeName == "[Bool]"
-           || variable.name != "id" && variable.typeName.unwrappedTypeName == "[ObjectId]"
-           || variable.typeName.unwrappedTypeName == "[Double]"
-           || variable.typeName.unwrappedTypeName == "[Int32]"
-           || variable.typeName.unwrappedTypeName == "[Int64]"
-           || variable.typeName.unwrappedTypeName == "[Int]" {
-             %>
-          doc["<%= variable.name %>"] = self.<%= variable.name %>
-        <%
-        // If it's an array of references
-          } else if variable.typeName.name.hasPrefix("[Reference") { %>
-          doc["<%= variable.name %>"] = self.<%= variable.name %><% if variable.typeName.isOptional { %>?<% } %>.map { $0.id }
-       <% }
-        // TODO: Support [Embeddable]?
-
-        // If this is not an array
-        } else {
-          // If the type is a BSON primitive type
-          if variable.typeName.unwrappedTypeName == "String"
-           || variable.typeName.unwrappedTypeName == "Data"
-           || variable.typeName.unwrappedTypeName == "Date"
-           || variable.typeName.unwrappedTypeName == "Bool"
-           || variable.name != "id" && variable.typeName.unwrappedTypeName == "ObjectId"
-           || variable.typeName.unwrappedTypeName == "Double"
-           || variable.typeName.unwrappedTypeName == "Int32"
-           || variable.typeName.unwrappedTypeName == "Int64"
-           || variable.typeName.unwrappedTypeName == "Int" { %>
-          doc["<%= variable.name %>"] = self.<%= variable.name %>
-        <%
-          // If this is a single reference
-          } else if variable.typeName.name.hasPrefix("Reference") {
-        %>
-            doc["<%= variable.name %>"] = self.<%= variable.name %><% if variable.typeName.isOptional { %>?<% } %>.id
-        <% } else if variable.type?.based["Embeddable"] != nil { %>
-          doc[raw: "<%= variable.name %>"] = self.<%= variable.name %><% if variable.typeName.isOptional { %>?<% } %>.meowSerialize()
-        <%
-        }
-      }
-    } %>
-
-    return doc
+    return (try? self.meowSerialize(resolvingReferences: false) ) ?? Document()
   }
 
   func meowSerialize(resolvingReferences: Bool) throws -> Document {
@@ -147,7 +109,7 @@ extension <%= type.name %> : ConcreteSerializable {
     %>
       var doc: Document = ["_id": self.id]
     <% } else { %>
-    var doc = Document()
+      var doc = Document()
     <% } %>
 
     <%
@@ -160,60 +122,34 @@ extension <%= type.name %> : ConcreteSerializable {
     <%
       // Loops over all variables in this Model/Embeddable and serializes them to the output document
       for variable in type.allVariables {
-        // If this is an array
-        if variable.typeName.unwrappedTypeName.hasPrefix("[") && variable.typeName.unwrappedTypeName.hasSuffix("]") {
-
-          // If it's an array of ValueConvertible types
-          if variable.typeName.unwrappedTypeName == "[String]"
-           || variable.typeName.unwrappedTypeName == "[Data]"
-           || variable.typeName.unwrappedTypeName == "[Date]"
-           || variable.typeName.unwrappedTypeName == "[Bool]"
-           || variable.name != "id" && variable.typeName.unwrappedTypeName == "[ObjectId]"
-           || variable.typeName.unwrappedTypeName == "[Double]"
-           || variable.typeName.unwrappedTypeName == "[Int32]"
-           || variable.typeName.unwrappedTypeName == "[Int64]"
-           || variable.typeName.unwrappedTypeName == "[Int]" {
-             %>
+          // If it's an array of Primitive types
+          if variable.isArray, let elementType = variable.type?.name, supportedPrimitives.contains(elementType) {
+        %>
           doc["<%= variable.name %>"] = self.<%= variable.name %>
-        <%
-        // If it's an array of references
-          } else if variable.typeName.name.hasPrefix("[Reference") { %>
-          if resolvingReferences {
-            doc[raw: "<%= variable.name %>"] = try self.<%= variable.name %><% if variable.typeName.isOptional { %>?<% } %>.map { try $0.resolve() as ValueConvertible }
-          } else {
+        <%} else if variable.isArray, variable.typeName.array?.elementType?.based["Embeddable"] != nil {%>
+            doc["<%= variable.name %>"] = self.<%= variable.name %>
+          // If it's an array of references
+        <%} else if variable.isArray, variable.typeName.array?.elementType?.name == "Reference" {%>
             doc["<%= variable.name %>"] = self.<%= variable.name %><% if variable.typeName.isOptional { %>?<% } %>.map { $0.id }
-          }
-       <% }
-        // TODO: Support [Embeddable]?
-
-        // If this is not an array
-        } else {
-          // If the type is a BSON primitive type
-          if variable.typeName.unwrappedTypeName == "String"
-           || variable.typeName.unwrappedTypeName == "Data"
-           || variable.typeName.unwrappedTypeName == "Date"
-           || variable.typeName.unwrappedTypeName == "Bool"
-           || variable.name != "id" && variable.typeName.unwrappedTypeName == "ObjectId"
-           || variable.typeName.unwrappedTypeName == "Double"
-           || variable.typeName.unwrappedTypeName == "Int32"
-           || variable.typeName.unwrappedTypeName == "Int64"
-           || variable.typeName.unwrappedTypeName == "Int" { %>
+   <%     } else if supportedPrimitives.contains(variable.typeName.unwrappedTypeName) {%>
           doc["<%= variable.name %>"] = self.<%= variable.name %>
         <%
           // If this is a single reference
-          } else if variable.typeName.name.hasPrefix("Reference") {
-        %>
-          if resolvingReferences {
-            doc[raw: "<%= variable.name %>"] = try self.<%= variable.name %><% if variable.typeName.isOptional { %>?<% } %>.resolve()
-          } else {
-            doc["<%= variable.name %>"] = self.<%= variable.name %><% if variable.typeName.isOptional { %>?<% } %>.id
-          }
-        <% } else if variable.type?.based["Embeddable"] != nil { %>
-          doc[raw: "<%= variable.name %>"] = self.<%= variable.name %><% if variable.typeName.isOptional { %>?<% } %>.meowSerialize()
+        } else if variable.typeName.name.hasPrefix("Reference") {%>
+            if resolvingReferences {
+          doc["<%= variable.name %>"] = doc["<%= variable.name %>"] = try self.<%= variable.name %><% if variable.typeName.isOptional { %>?<% } %>.resolve().meowSerialize()
+            } else {
+              doc["<%= variable.name %>"] = self.<%= variable.name %><% if variable.typeName.isOptional { %>?<% } %>.id
+            }
+        } else if variable.type?.based["Embeddable"] != nil { %>
+          doc["<%= variable.name %>"] = self.<%= variable.name %><% if variable.typeName.isOptional { %>?<% } %>.meowSerialize()
         <%
-        }
-      }
-    } %>
+          } else {
+            %>
+            // <%= variable %>
+            <%
+          }
+      }%>
 
     return doc
   }
@@ -227,55 +163,36 @@ extension <%= type.name %> : ConcreteSerializable {
       <% usedNames = [] %>
       <% for variable in type.variables where !usedNames.contains(variable.name) { %>
         <% usedNames.append(variable.name) %>
-
-        <% if variable.typeName.unwrappedTypeName.hasPrefix("[") && variable.typeName.unwrappedTypeName.hasSuffix("]") { %>
-          <% if variable.typeName.unwrappedTypeName == "[String]"
-             || variable.typeName.unwrappedTypeName == "[Data]"
-             || variable.typeName.unwrappedTypeName == "[Date]"
-             || variable.typeName.unwrappedTypeName == "[Bool]"
-             || variable.name != "id" && variable.typeName.unwrappedTypeName == "[ObjectId]"
-             || variable.typeName.unwrappedTypeName == "[Double]"
-             || variable.typeName.unwrappedTypeName == "[Int32]"
-             || variable.typeName.unwrappedTypeName == "[Int64]"
-             || variable.typeName.unwrappedTypeName == "[Int]" { %>
-             // The property is a BSON type, so we can just extract it from the document:
-             <% if variable.typeName.isOptional { %>
-                  let <%=variable.name%>Value: <%=variable.typeName%> = source.removeValue(forKey: "<%=variable.name%>") as? <%=variable.typeName.unwrappedTypeName%>
-             <% } else { %>
-                  let <%=variable.name%>Value: <%=variable.typeName%> = try Meow.Helpers.requireValue(source.removeValue(forKey: "<%=variable.name%>") as? <%=variable.typeName%>, keyForError: "<%=variable.name%>")
-             <% } %>
-          <% } else if variable.typeName.name.hasPrefix("[Reference") { %>
+        <% if variable.isArray, let elementType = variable.typeName.array?.elementTypeName.name, supportedPrimitives.contains(elementType) { %>
+           // The property is a BSON type, so we can just extract it from the document:
+           <% if variable.typeName.isOptional { %>
+                let <%=variable.name%>Value: <%=variable.typeName%> = <%=variable.typeName.unwrappedTypeName%>(source.removeValue(forKey: "<%=variable.name%>"))
+           <% } else { %>
+                let <%=variable.name%>Value: <%=variable.typeName%> = try Meow.Helpers.requireValue(<%=variable.typeName%>(source.removeValue(forKey: "<%=variable.name%>")), keyForError: "<%=variable.name%>")
+           <% } %>
+        <%} else if variable.isArray, variable.typeName.array?.elementTypeName.name == "Reference" {%>
             // o the noes it is a reference
             let <%=variable.name%>Ids = try Meow.Helpers.requireValue(source.removeValue(forKey: "<%=variable.name%>") as? Document, keyForError: "<%=variable.name%>").arrayValue
             let <%=variable.name%>Value: <%=variable.typeName%>
 
             <% if variable.typeName.isOptional { %>
                if let <%=variable.name%>Ids = <%=variable.name%>Ids {
-                   <%=variable.name%>Value = try <%=variable.name%>Ids.map { try Meow.Helpers.requireValue($0 as? ObjectId, keyForError: "<%=variable.name%>") }
+                   <%=variable.name%>Value = try <%=variable.name%>Ids.map { try Meow.Helpers.requireValue(ObjectId($0), keyForError: "<%=variable.name%>") }
                } else {
                    <%=variable.name%>Value = nil
                }
             <% } else { %>
                <%=variable.name%>Value = try <%=variable.name%>Ids.map {
-                  Reference(restoring: try Meow.Helpers.requireValue($0 as? ObjectId, keyForError: "<%=variable.name%>"))
+                  Reference(restoring: try Meow.Helpers.requireValue(ObjectId($0), keyForError: "<%=variable.name%>"))
                 }
             <% } %>
-          <% } %>
         <% } else { %>
-          <% if variable.typeName.unwrappedTypeName == "String"
-             || variable.typeName.unwrappedTypeName == "Data"
-             || variable.typeName.unwrappedTypeName == "Date"
-             || variable.typeName.unwrappedTypeName == "Bool"
-             || variable.name != "id" && variable.typeName.unwrappedTypeName == "ObjectId"
-             || variable.typeName.unwrappedTypeName == "Double"
-             || variable.typeName.unwrappedTypeName == "Int32"
-             || variable.typeName.unwrappedTypeName == "Int64"
-             || variable.typeName.unwrappedTypeName == "Int" { %>
+          <% if supportedPrimitives.contains(variable.typeName.unwrappedTypeName) { %>
              // The property is a BSON type, so we can just extract it from the document:
              <% if variable.typeName.isOptional { %>
-                  let <%=variable.name%>Value: <%=variable.typeName%> = source.removeValue(forKey: "<%=variable.name%>") as? <%=variable.typeName.unwrappedTypeName%>
+                  let <%=variable.name%>Value: <%=variable.typeName%> = <%=variable.typeName.unwrappedTypeName%>(source.removeValue(forKey: "<%=variable.name%>"))
              <% } else { %>
-                  let <%=variable.name%>Value: <%=variable.typeName%> = try Meow.Helpers.requireValue(source.removeValue(forKey: "<%=variable.name%>") as? <%=variable.typeName%>, keyForError: "<%=variable.name%>")
+                  let <%=variable.name%>Value: <%=variable.typeName%> = try Meow.Helpers.requireValue(<%=variable.typeName%>(source.removeValue(forKey: "<%=variable.name%>")), keyForError: "<%=variable.name%>")
              <% } %>
           <% } else if variable.typeName.name.hasPrefix("Reference") { %>
              // o the noes it is a reference
@@ -328,7 +245,7 @@ extension <%= type.name %> : ConcreteSerializable {
       try self.init(
         <% let parameters = type.initializers.first?.parameters ?? [] %>
         <% for (index, parameter) in parameters.enumerated() { %>
-          <%= parameter.argumentLabel %>: <%= parameter.name%>Value
+          <%= parameter.argumentLabel! %>: <%= parameter.name%>Value
           <% if parameters.count != index+1 { %>
           ,
           <% } %>
@@ -432,17 +349,17 @@ extension <%= type.name %> : ConcreteSerializable {
 
       static func find(matching closure: ((VirtualInstance) -> (Query))) throws -> Cursor<<%= type.name %>> {
           let query = closure(VirtualInstance())
-          return try self.find(matching: query)
+          return try self.find(query)
       }
 
       static func findOne(matching closure: ((VirtualInstance) -> (Query))) throws -> <%= type.name %>? {
           let query = closure(VirtualInstance())
-          return try self.findOne(matching: query)
+          return try self.findOne(query)
       }
 
       static func count(matching closure: ((VirtualInstance) -> (Query))) throws -> Int {
           let query = closure(VirtualInstance())
-          return try self.count(matching: query)
+          return try self.count(query)
       }
 
       static func createIndex(named name: String? = nil, withParameters closure: ((VirtualInstance, IndexSubject) -> ())) throws {
@@ -458,7 +375,7 @@ extension <%= type.name %> : ConcreteSerializable {
   %>
   extension <%= type.name %> : StringInitializable {
     public convenience init?(from string: String) throws {
-      guard let document = try <%= type.name %>.meowCollection.findOne(matching: "_id" == (try ObjectId(string))) else {
+      guard let document = try <%= type.name %>.meowCollection.findOne("_id" == (try ObjectId(string))) else {
         return nil
       }
 
@@ -467,20 +384,24 @@ extension <%= type.name %> : ConcreteSerializable {
   }
 
   <%
-    // Makes this model ValueConvertible so that it can be expressed as ExtendedJSON
+    // Makes this model Primitive so that it can be expressed as ExtendedJSON
   %>
-  extension <%= type.name %> : ValueConvertible {
-    public func makeBSONPrimitive() -> BSONPrimitive {
-      return self.meowSerialize()
-    }
-  }
-
-  extension <%= type.name %> : ResponseRepresentable {
-    public func makeResponse() -> Response {
-      return self.makeExtendedJSON().makeResponse()
-    }
-  }
-<% } %>
+//   extension <%= type.name %> : Primitive {
+//     public var typeIdentifier: UInt8 {
+//       return 0x03
+//     }
+//
+//     public func makeBinary() -> [UInt8] {
+//       return self.meowSerialize().makeBinary()
+//     }
+//   }
+//
+//   extension <%= type.name %> : ResponseRepresentable {
+//     public func makeResponse() -> Response {
+//       return self.makeExtendedJSON().makeResponse()
+//     }
+//   }
+// <% } %>
 
 
 
@@ -493,220 +414,220 @@ extension <%= type.name %> : ConcreteSerializable {
   // Adds helpers for Vapor's Droplet
   // Generates routes based on your sourcery comments in models
 %>
-extension Droplet {
-  public func start(_ mongoURL: String) throws -> Never {
-    let meow = try Meow.init(mongoURL)
-
-    <% for type in (types.based["Model"] ?? []) { %>
-      <% for method in type.methods where method.accessLevel == "public" || method.accessLevel == "internal" && method.annotations["api"] != nil { %>
-        <% if method.isStatic { %>
-          self.<%= (method.annotations["api"] as? String ?? "").lowercased() %>("<%= type.name.lowercased() %>s", "<%= method.annotations["pathSuffix"] as? String ?? method.shortName %>") { request in
-        <% } else { %>
-          self.<%= (method.annotations["api"] as? String ?? "").lowercased() %>("<%= type.name.lowercased() %>s", <%= type.name %>.self, "<%= method.annotations["pathSuffix"] as? String ?? method.shortName %>") { request, model in
-        <% } %>
-
-        <% if (method.annotations["data"] as? String ?? "").lowercased() == "query" || (method.annotations["data"] as? String ?? "").lowercased() == "json" { %>
-          <% if (method.annotations["data"] as? String ?? "").lowercased() == "query" { %>
-            guard let query = request.query, case .object(let parameters) = query else {
-                return Response(status: .badRequest)
-            }
-          <% } else { %>
-            guard let json = request.json?.node, case .object(let parameters) = json else {
-                return Response(status: .badRequest)
-            }
-          <% } %>
-
-          <% for parameter in method.parameters { %>
-            <% if parameter.typeName.isOptional {%>
-              <% if parameter.typeName.unwrappedTypeName == "String" { %>
-                let <%= parameter.name %> = parameters["<%= parameter.name %>"]?.string
-              <% } else if parameter.typeName.unwrappedTypeName == "Int" { %>
-                let <%= parameter.name %> = parameters["<%= parameter.name %>"]?.int
-              <% } else if parameter.typeName.unwrappedTypeName == "Bool" { %>
-                let <%= parameter.name %> = parameters["<%= parameter.name %>"]?.bool
-              <% } else if parameter.typeName.unwrappedTypeName == "Float" { %>
-                let <%= parameter.name %> = parameters["<%= parameter.name %>"]?.float
-              <% } else if parameter.typeName.unwrappedTypeName == "Double" { %>
-                let <%= parameter.name %> = parameters["<%= parameter.name %>"]?.double
-              <% } else if parameter.typeName.unwrappedTypeName == "ObjectId" { %>
-                let <%= parameter.name %> = try? ObjectId(parameters["<%= parameter.name %>"]?.string ?? "")
-              <% } else { %>
-                return Response(status: .internalServerError)
-              <% } %>
-
-            <% } else { %>
-
-              <% if parameter.typeName.unwrappedTypeName == "String" { %>
-                guard let <%= parameter.name %> = parameters["<%= parameter.name %>"]?.string else {
-                  return Response(status: .badRequest)
-                }
-              <% } else if parameter.typeName.unwrappedTypeName == "Int" { %>
-                guard let <%= parameter.name %> = parameters["<%= parameter.name %>"]?.int else {
-                  return Response(status: .badRequest)
-                }
-              <% } else if parameter.typeName.unwrappedTypeName == "Bool" { %>
-                guard let <%= parameter.name %> = parameters["<%= parameter.name %>"]?.bool else {
-                  return Response(status: .badRequest)
-                }
-              <% } else if parameter.typeName.unwrappedTypeName == "Float" { %>
-                guard let <%= parameter.name %> = parameters["<%= parameter.name %>"]?.float else {
-                  return Response(status: .badRequest)
-                }
-              <% } else if parameter.typeName.unwrappedTypeName == "Double" { %>
-                guard let <%= parameter.name %> = parameters["<%= parameter.name %>"]?.double else {
-                  return Response(status: .badRequest)
-                }
-              <% } else if parameter.typeName.unwrappedTypeName == "ObjectId" { %>
-                guard let <%= parameter.name %>P = parameters["<%= parameter.name %>"]?.string, let <%= parameter.name %> = try ObjectId(<%= parameter.name %>P) else {
-                  return Response(status: .badRequest)
-                }
-              <% } else { %>
-                return Response(status: .internalServerError)
-              <% } %>
-            <% } %>
-          <% } %>
-        <% } %>
-
-        <% if (method.annotations["data"] as? String ?? "").lowercased() == "form" { %>
-          guard let parameters = request.multipart else {
-              return Response(status: .badRequest)
-          }
-
-          <% for parameter in method.parameters { %>
-            <% if parameter.typeName.isOptional {%>
-              <% if parameter.typeName.unwrappedTypeName == "String" { %>
-              let <%= parameter.name %>: String?
-                if case .input(let <%= parameter.name %>P) = parameters["<%= parameter.name %>"] {
-                  <%= parameter.name %> = <%= parameter.name %>P
-                } else {
-                <%= parameter.name %> = nil
-                }
-              <% } else if parameter.typeName.unwrappedTypeName == "Int" { %>
-              guard let <%= parameter.name %>E = parameters["<%= parameter.name %>"], case .input(let <%= parameter.name %>P) = <%= parameter.name %>E else {
-                return Response(status: .badRequest)
-              }
-
-              let <%= parameter.name %> = Int(<%= parameter.name %>P)
-              <% } else if parameter.typeName.unwrappedTypeName == "Bool" { %>
-                guard let <%= parameter.name %>E = parameters["<%= parameter.name %>"], case .input(let <%= parameter.name %>P) = <%= parameter.name %>E else {
-                  return Response(status: .badRequest)
-                }
-
-                let <%= parameter.name %> = (<%= parameter.name %>P.lowercased() == "true" || <%= parameter.name %>P.lowercased() == "1")
-              <% } else if parameter.typeName.unwrappedTypeName == "Float" { %>
-                guard let <%= parameter.name %>E = parameters["<%= parameter.name %>"], case .input(let <%= parameter.name %>P) = <%= parameter.name %>E else {
-                  return Response(status: .badRequest)
-                }
-
-                let <%= parameter.name %> = Float(<%= parameter.name %>P)
-              <% } else if parameter.typeName.unwrappedTypeName == "Double" { %>
-                guard let <%= parameter.name %>E = parameters["<%= parameter.name %>"], case .input(let <%= parameter.name %>P) = <%= parameter.name %>E else {
-                  return Response(status: .badRequest)
-                }
-
-                let <%= parameter.name %> = Double(<%= parameter.name %>P)
-              <% } else if parameter.typeName.unwrappedTypeName == "ObjectId" { %>
-                guard let <%= parameter.name %>E = parameters["<%= parameter.name %>"], case .input(let <%= parameter.name %>P) = <%= parameter.name %>E else {
-                  return Response(status: .badRequest)
-                }
-
-                let <%= parameter.name %> = try? ObjectId(<%= parameter.name %>P)
-              <% } else { %>
-                return Response(status: .internalServerError)
-              <% } %>
-
-            <% } else { %>
-              <% if parameter.typeName.unwrappedTypeName == "String" { %>
-                guard let <%= parameter.name %>E = parameters["<%= parameter.name %>"], case .input(let <%= parameter.name %>) = <%= parameter.name %>E else {
-                  return Response(status: .badRequest)
-                }
-              <% } else if parameter.typeName.unwrappedTypeName == "Int" { %>
-              guard let <%= parameter.name %>E = parameters["<%= parameter.name %>"], case .input(let <%= parameter.name %>P) = <%= parameter.name %>E else {
-                return Response(status: .badRequest)
-              }
-
-              let <%= parameter.name %> = Int(<%= parameter.name %>P)
-              <% } else if parameter.typeName.unwrappedTypeName == "Bool" { %>
-                guard let <%= parameter.name %>E = parameters["<%= parameter.name %>"], case .input(let <%= parameter.name %>P) = <%= parameter.name %>E else {
-                  return Response(status: .badRequest)
-                }
-
-                let <%= parameter.name %> = (<%= parameter.name %>P.lowercased() == "true" || <%= parameter.name %>P.lowercased() == "1")
-              <% } else if parameter.typeName.unwrappedTypeName == "Float" { %>
-                guard let <%= parameter.name %>E = parameters["<%= parameter.name %>"], case .input(let <%= parameter.name %>P) = <%= parameter.name %>E else {
-                  return Response(status: .badRequest)
-                }
-
-                let <%= parameter.name %> = Float(<%= parameter.name %>P)
-              <% } else if parameter.typeName.unwrappedTypeName == "Double" { %>
-                guard let <%= parameter.name %>E = parameters["<%= parameter.name %>"], case .input(let <%= parameter.name %>P) = <%= parameter.name %>E else {
-                  return Response(status: .badRequest)
-                }
-
-                let <%= parameter.name %> = Double(<%= parameter.name %>P)
-              <% } else if parameter.typeName.unwrappedTypeName == "ObjectId" { %>
-                guard let <%= parameter.name %>E = parameters["<%= parameter.name %>"], case .input(let <%= parameter.name %>P) = <%= parameter.name %>E else {
-                  return Response(status: .badRequest)
-                }
-
-                let <%= parameter.name %> = try ObjectId(<%= parameter.name %>P)
-              <% } else { %>
-                return Response(status: .internalServerError)
-              <% } %>
-            <% } %>
-          <% } %>
-        <% } %>
-
-        <% if method.isStatic { %>
-        // TODO: Reverse isVoid when that works
-          <% if !method.returnTypeName.isVoid { %> let responseObject = <% } %>try <%= type.name %>.<%= method.shortName %>(
-            <% for (index, parameter) in method.parameters.enumerated() { %>
-              <%= parameter.name %>: <%= parameter.name %>
-              <% if method.parameters.count != index+1 { %>
-              ,
-              <% } %>
-            <% } %>
-          )
-
-          <% if method.returnType?.based["Model"] != nil { %>
-            <% if method.returnTypeName.isOptional == true { %>
-              return try Meow.Helpers.requireValue(responseObject, keyForError: "")
-            <% } else { %>
-              return responseObject
-            <% } %>
-          <% } else if method.returnTypeName.name.hasPrefix("Cursor<") { %>
-            <% if method.returnTypeName.isOptional == true { %>
-              return try Meow.Helpers.requireValue(responseObject, keyForError: "")
-            <% } else { %>
-              return responseObject
-            <% } %>
-          <% } else { %>
-            return Response(status: .ok)
-          <% } %>
-        <% } else { %>
-        // TODO: Reverse isVoid when that works
-          <% if !method.returnTypeName.isVoid { %> let responseObject = <% } %> try model.<%= method.shortName %>(
-            <% for (index, parameter) in method.parameters.enumerated() { %>
-              <%= parameter.name %>: <%= parameter.name %>
-              <% if method.parameters.count != index+1 { %>
-              ,
-              <% } %>
-            <% } %>
-          )
-
-            <% if method.returnType?.based["Model"] != nil { %>
-              return responseObject
-            <% } else if method.returnType?.based["Embeddable"] != nil { %>
-              return responseObject
-            <% } else if method.returnTypeName.name.hasPrefix("Cursor<") { %>
-              return responseObject
-            <% } else { %>
-              return Response(status: .ok)
-            <% } %>
-          <% } %>
-          }
-      <% } %>
-    <% } %>
-    self.run()
-  }
-}
+// extension Droplet {
+//   public func start(_ mongoURL: String) throws -> Never {
+//     let meow = try Meow.init(mongoURL)
+//
+//     <% for type in (types.based["Model"] ?? []) { %>
+//       <% for method in type.methods where method.accessLevel == "public" || method.accessLevel == "internal" && method.annotations["api"] != nil { %>
+//         <% if method.isStatic { %>
+//           self.<%= (method.annotations["api"] as? String ?? "").lowercased() %>("<%= type.name.lowercased() %>s", "<%= method.annotations["pathSuffix"] as? String ?? method.shortName %>") { request in
+//         <% } else { %>
+//           self.<%= (method.annotations["api"] as? String ?? "").lowercased() %>("<%= type.name.lowercased() %>s", <%= type.name %>.self, "<%= method.annotations["pathSuffix"] as? String ?? method.shortName %>") { request, model in
+//         <% } %>
+//
+//         <% if (method.annotations["data"] as? String ?? "").lowercased() == "query" || (method.annotations["data"] as? String ?? "").lowercased() == "json" { %>
+//           <% if (method.annotations["data"] as? String ?? "").lowercased() == "query" { %>
+//             guard let query = request.query, case .object(let parameters) = query else {
+//                 return Response(status: .badRequest)
+//             }
+//           <% } else { %>
+//             guard let json = request.json?.node, case .object(let parameters) = json else {
+//                 return Response(status: .badRequest)
+//             }
+//           <% } %>
+//
+//           <% for parameter in method.parameters { %>
+//             <% if parameter.typeName.isOptional {%>
+//               <% if parameter.typeName.unwrappedTypeName == "String" { %>
+//                 let <%= parameter.name %> = parameters["<%= parameter.name %>"]?.string
+//               <% } else if parameter.typeName.unwrappedTypeName == "Int" { %>
+//                 let <%= parameter.name %> = parameters["<%= parameter.name %>"]?.int
+//               <% } else if parameter.typeName.unwrappedTypeName == "Bool" { %>
+//                 let <%= parameter.name %> = parameters["<%= parameter.name %>"]?.bool
+//               <% } else if parameter.typeName.unwrappedTypeName == "Float" { %>
+//                 let <%= parameter.name %> = parameters["<%= parameter.name %>"]?.float
+//               <% } else if parameter.typeName.unwrappedTypeName == "Double" { %>
+//                 let <%= parameter.name %> = parameters["<%= parameter.name %>"]?.double
+//               <% } else if parameter.typeName.unwrappedTypeName == "ObjectId" { %>
+//                 let <%= parameter.name %> = try? ObjectId(parameters["<%= parameter.name %>"]?.string ?? "")
+//               <% } else { %>
+//                 return Response(status: .internalServerError)
+//               <% } %>
+//
+//             <% } else { %>
+//
+//               <% if parameter.typeName.unwrappedTypeName == "String" { %>
+//                 guard let <%= parameter.name %> = parameters["<%= parameter.name %>"]?.string else {
+//                   return Response(status: .badRequest)
+//                 }
+//               <% } else if parameter.typeName.unwrappedTypeName == "Int" { %>
+//                 guard let <%= parameter.name %> = parameters["<%= parameter.name %>"]?.int else {
+//                   return Response(status: .badRequest)
+//                 }
+//               <% } else if parameter.typeName.unwrappedTypeName == "Bool" { %>
+//                 guard let <%= parameter.name %> = parameters["<%= parameter.name %>"]?.bool else {
+//                   return Response(status: .badRequest)
+//                 }
+//               <% } else if parameter.typeName.unwrappedTypeName == "Float" { %>
+//                 guard let <%= parameter.name %> = parameters["<%= parameter.name %>"]?.float else {
+//                   return Response(status: .badRequest)
+//                 }
+//               <% } else if parameter.typeName.unwrappedTypeName == "Double" { %>
+//                 guard let <%= parameter.name %> = parameters["<%= parameter.name %>"]?.double else {
+//                   return Response(status: .badRequest)
+//                 }
+//               <% } else if parameter.typeName.unwrappedTypeName == "ObjectId" { %>
+//                 guard let <%= parameter.name %>P = parameters["<%= parameter.name %>"]?.string, let <%= parameter.name %> = try ObjectId(<%= parameter.name %>P) else {
+//                   return Response(status: .badRequest)
+//                 }
+//               <% } else { %>
+//                 return Response(status: .internalServerError)
+//               <% } %>
+//             <% } %>
+//           <% } %>
+//         <% } %>
+//
+//         <% if (method.annotations["data"] as? String ?? "").lowercased() == "form" { %>
+//           guard let parameters = request.multipart else {
+//               return Response(status: .badRequest)
+//           }
+//
+//           <% for parameter in method.parameters { %>
+//             <% if parameter.typeName.isOptional {%>
+//               <% if parameter.typeName.unwrappedTypeName == "String" { %>
+//               let <%= parameter.name %>: String?
+//                 if case .input(let <%= parameter.name %>P) = parameters["<%= parameter.name %>"] {
+//                   <%= parameter.name %> = <%= parameter.name %>P
+//                 } else {
+//                 <%= parameter.name %> = nil
+//                 }
+//               <% } else if parameter.typeName.unwrappedTypeName == "Int" { %>
+//               guard let <%= parameter.name %>E = parameters["<%= parameter.name %>"], case .input(let <%= parameter.name %>P) = <%= parameter.name %>E else {
+//                 return Response(status: .badRequest)
+//               }
+//
+//               let <%= parameter.name %> = Int(<%= parameter.name %>P)
+//               <% } else if parameter.typeName.unwrappedTypeName == "Bool" { %>
+//                 guard let <%= parameter.name %>E = parameters["<%= parameter.name %>"], case .input(let <%= parameter.name %>P) = <%= parameter.name %>E else {
+//                   return Response(status: .badRequest)
+//                 }
+//
+//                 let <%= parameter.name %> = (<%= parameter.name %>P.lowercased() == "true" || <%= parameter.name %>P.lowercased() == "1")
+//               <% } else if parameter.typeName.unwrappedTypeName == "Float" { %>
+//                 guard let <%= parameter.name %>E = parameters["<%= parameter.name %>"], case .input(let <%= parameter.name %>P) = <%= parameter.name %>E else {
+//                   return Response(status: .badRequest)
+//                 }
+//
+//                 let <%= parameter.name %> = Float(<%= parameter.name %>P)
+//               <% } else if parameter.typeName.unwrappedTypeName == "Double" { %>
+//                 guard let <%= parameter.name %>E = parameters["<%= parameter.name %>"], case .input(let <%= parameter.name %>P) = <%= parameter.name %>E else {
+//                   return Response(status: .badRequest)
+//                 }
+//
+//                 let <%= parameter.name %> = Double(<%= parameter.name %>P)
+//               <% } else if parameter.typeName.unwrappedTypeName == "ObjectId" { %>
+//                 guard let <%= parameter.name %>E = parameters["<%= parameter.name %>"], case .input(let <%= parameter.name %>P) = <%= parameter.name %>E else {
+//                   return Response(status: .badRequest)
+//                 }
+//
+//                 let <%= parameter.name %> = try? ObjectId(<%= parameter.name %>P)
+//               <% } else { %>
+//                 return Response(status: .internalServerError)
+//               <% } %>
+//
+//             <% } else { %>
+//               <% if parameter.typeName.unwrappedTypeName == "String" { %>
+//                 guard let <%= parameter.name %>E = parameters["<%= parameter.name %>"], case .input(let <%= parameter.name %>) = <%= parameter.name %>E else {
+//                   return Response(status: .badRequest)
+//                 }
+//               <% } else if parameter.typeName.unwrappedTypeName == "Int" { %>
+//               guard let <%= parameter.name %>E = parameters["<%= parameter.name %>"], case .input(let <%= parameter.name %>P) = <%= parameter.name %>E else {
+//                 return Response(status: .badRequest)
+//               }
+//
+//               let <%= parameter.name %> = Int(<%= parameter.name %>P)
+//               <% } else if parameter.typeName.unwrappedTypeName == "Bool" { %>
+//                 guard let <%= parameter.name %>E = parameters["<%= parameter.name %>"], case .input(let <%= parameter.name %>P) = <%= parameter.name %>E else {
+//                   return Response(status: .badRequest)
+//                 }
+//
+//                 let <%= parameter.name %> = (<%= parameter.name %>P.lowercased() == "true" || <%= parameter.name %>P.lowercased() == "1")
+//               <% } else if parameter.typeName.unwrappedTypeName == "Float" { %>
+//                 guard let <%= parameter.name %>E = parameters["<%= parameter.name %>"], case .input(let <%= parameter.name %>P) = <%= parameter.name %>E else {
+//                   return Response(status: .badRequest)
+//                 }
+//
+//                 let <%= parameter.name %> = Float(<%= parameter.name %>P)
+//               <% } else if parameter.typeName.unwrappedTypeName == "Double" { %>
+//                 guard let <%= parameter.name %>E = parameters["<%= parameter.name %>"], case .input(let <%= parameter.name %>P) = <%= parameter.name %>E else {
+//                   return Response(status: .badRequest)
+//                 }
+//
+//                 let <%= parameter.name %> = Double(<%= parameter.name %>P)
+//               <% } else if parameter.typeName.unwrappedTypeName == "ObjectId" { %>
+//                 guard let <%= parameter.name %>E = parameters["<%= parameter.name %>"], case .input(let <%= parameter.name %>P) = <%= parameter.name %>E else {
+//                   return Response(status: .badRequest)
+//                 }
+//
+//                 let <%= parameter.name %> = try ObjectId(<%= parameter.name %>P)
+//               <% } else { %>
+//                 return Response(status: .internalServerError)
+//               <% } %>
+//             <% } %>
+//           <% } %>
+//         <% } %>
+//
+//         <% if method.isStatic { %>
+//         // TODO: Reverse isVoid when that works
+//           <% if !method.returnTypeName.isVoid { %> let responseObject = <% } %>try <%= type.name %>.<%= method.shortName %>(
+//             <% for (index, parameter) in method.parameters.enumerated() { %>
+//               <%= parameter.name %>: <%= parameter.name %>
+//               <% if method.parameters.count != index+1 { %>
+//               ,
+//               <% } %>
+//             <% } %>
+//           )
+//
+//           <% if method.returnType?.based["Model"] != nil { %>
+//             <% if method.returnTypeName.isOptional == true { %>
+//               return try Meow.Helpers.requireValue(responseObject, keyForError: "")
+//             <% } else { %>
+//               return responseObject
+//             <% } %>
+//           <% } else if method.returnTypeName.name.hasPrefix("Cursor<") { %>
+//             <% if method.returnTypeName.isOptional == true { %>
+//               return try Meow.Helpers.requireValue(responseObject, keyForError: "")
+//             <% } else { %>
+//               return responseObject
+//             <% } %>
+//           <% } else { %>
+//             return Response(status: .ok)
+//           <% } %>
+//         <% } else { %>
+//         // TODO: Reverse isVoid when that works
+//           <% if !method.returnTypeName.isVoid { %> let responseObject = <% } %> try model.<%= method.shortName %>(
+//             <% for (index, parameter) in method.parameters.enumerated() { %>
+//               <%= parameter.name %>: <%= parameter.name %>
+//               <% if method.parameters.count != index+1 { %>
+//               ,
+//               <% } %>
+//             <% } %>
+//           )
+//
+//             <% if method.returnType?.based["Model"] != nil { %>
+//               return responseObject
+//             <% } else if method.returnType?.based["Embeddable"] != nil { %>
+//               return responseObject
+//             <% } else if method.returnTypeName.name.hasPrefix("Cursor<") { %>
+//               return responseObject
+//             <% } else { %>
+//               return Response(status: .ok)
+//             <% } %>
+//           <% } %>
+//           }
+//       <% } %>
+//     <% } %>
+//     self.run()
+//   }
+// }

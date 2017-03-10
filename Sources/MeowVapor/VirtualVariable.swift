@@ -19,7 +19,7 @@ public protocol VirtualVariable {
 
 public protocol VirtualComparable : VirtualVariable {}
 
-public func ==(lhs: VirtualVariable, rhs: ValueConvertible) -> Query {
+public func ==(lhs: VirtualVariable, rhs: Primitive) -> Query {
     return lhs.name == rhs
 }
 
@@ -72,7 +72,7 @@ public struct VirtualArray<V: VirtualVariable> : VirtualVariable {
     
     typealias VirtualSubtype = V.Type
     
-    public func contains(_ other: ValueConvertible) -> Query {
+    public func contains(_ other: Primitive) -> Query {
         return [
             self.name: other
         ]
@@ -121,8 +121,7 @@ public prefix func !(rhs: Query) -> Query {
     return Query(query)
 }
 
-public protocol MeowNumber : ValueConvertible {}
+public protocol MeowNumber : Primitive {}
 extension Int : MeowNumber {}
 extension Int32 : MeowNumber {}
-extension Int64 : MeowNumber {}
 extension Double : MeowNumber {}

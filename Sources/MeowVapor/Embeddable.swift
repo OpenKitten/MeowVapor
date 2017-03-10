@@ -17,7 +17,7 @@ public protocol DynamicSerializable {
 }
 
 /// Should be implemented in an extension by the generator.
-/// 
+///
 /// When implemented, it allows conversion to and from a Document
 public protocol ConcreteSerializable {
     init(fromDocument source: Document) throws
@@ -25,9 +25,23 @@ public protocol ConcreteSerializable {
     func meowSerialize() -> Document
 }
 
-public protocol ConcreteSingleValueSerializable {
+public protocol ConcreteSingleValueSerializable : Primitive {
     func meowSerialize(resolvingReferences: Bool) throws -> Primitive
     func meowSerialize() -> Primitive
+}
+
+extension ConcreteSingleValueSerializable {
+    public func convert<DT>(to type: DT.Type) -> DT.SupportedValue? where DT : DataType {
+        return self.meowSerialize().convert(to: type)
+    }
+    
+    public var typeIdentifier: Byte {
+        return meowSerialize().typeIdentifier
+    }
+    
+    public func makeBinary() -> Bytes {
+        return meowSerialize().makeBinary()
+    }
 }
 
 /// An empty protocol indicating that this is not a Model but a value that lies embedded in a model

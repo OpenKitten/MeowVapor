@@ -19,7 +19,6 @@ extension File : ResponseRepresentable {
         return Response(status: .ok, headers: headers) { stream in
             for chunk in file {
                 try stream.write(chunk.data)
-                try stream.flush(timingOut: 5)
             }
             
             try stream.close()

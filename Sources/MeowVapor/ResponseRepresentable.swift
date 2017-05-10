@@ -1,11 +1,3 @@
-//
-//  ResponseRepresentable.swift
-//  Tikcit
-//
-//  Created by Robbert Brandsma on 10-05-17.
-//
-//
-
 import Vapor
 import Cheetah
 import BSON

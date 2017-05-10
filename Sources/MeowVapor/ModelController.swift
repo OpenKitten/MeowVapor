@@ -28,6 +28,15 @@ open class ModelController<M : Model & StringInitializable>: ResourceRepresentab
         )
     }
     
+    /// This is meant as an extension point. The query is used by `index`.
+    open func makeBaseQuery(for request: Request) throws -> MongoKitten.Query {
+        return Query(Document())
+    }
+    
+    open func makeImplicitValues(for request: HTTP.Request) throws -> M.Values {
+        return M.Values.init()
+    }
+    
     open func show(request: Request, instance: M) throws -> ResponseRepresentable {
         return instance.serialize()
     }
@@ -50,8 +59,9 @@ open class ModelController<M : Model & StringInitializable>: ResourceRepresentab
     
     open func index(request: Request) throws -> ResponseRepresentable {
         let (result, usedPagination) = try M.paginatedFind(for: request,
-                                         allowFiltering: filterFields,
-                                         allowSorting: sortFields)
+                                                           baseQuery: makeBaseQuery(for: request),
+                                                           allowFiltering: filterFields,
+                                                           allowSorting: sortFields)
         
         let data = result.data.map{ $0.serialize() }.makeDocument()
         

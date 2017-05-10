@@ -17,6 +17,7 @@ open class ModelController<M : Model & StringInitializable>: ResourceRepresentab
     
     open var filterFields: Set<M.Key> = []
     open var sortFields: Set<M.Key> = []
+    open var makeImplicitValues: ((Request) throws -> M.Values)?
     
     open func makeResource() -> Resource<M> {
         return Resource(
@@ -31,10 +32,6 @@ open class ModelController<M : Model & StringInitializable>: ResourceRepresentab
     /// This is meant as an extension point. The query is used by `index`.
     open func makeBaseQuery(for request: Request) throws -> MongoKitten.Query {
         return Query(Document())
-    }
-    
-    open func makeImplicitValues(for request: HTTP.Request) throws -> M.Values {
-        return M.Values.init()
     }
     
     open func show(request: Request, instance: M) throws -> ResponseRepresentable {
@@ -81,8 +78,12 @@ open class ModelController<M : Model & StringInitializable>: ResourceRepresentab
     }
     
     open func store(request: Request) throws -> ResponseRepresentable {
-        guard let document = request.document else {
+        guard var document = request.document else {
             throw Abort.badRequest
+        }
+        
+        if let append = try makeImplicitValues?(request) {
+            document += append.serialize()
         }
         
         _ = try M(newFrom: document)

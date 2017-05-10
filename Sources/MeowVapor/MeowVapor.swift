@@ -1,9 +1,5 @@
 import HTTP
 import Cheetah
-@_exported import Meow
-@_exported import Vapor
-@_exported import BSON
-@_exported import MongoKitten
 import Sessions
 import ExtendedJSON
 
@@ -29,16 +25,6 @@ extension Request {
     }
 }
 
-public protocol APIModel : Model, ResponseRepresentable {
-    var publicProjection: Projection { get }
-}
-
-extension APIModel {
-    public func makeResponse() throws -> Response {
-        return try self.serialize().redacting(publicProjection).makeResponse()
-    }
-}
-
 extension Document {
     public func redacting(_ projection: Projection) -> Document {
         var doc: Document = [
@@ -56,29 +42,5 @@ extension Document {
         }
         
         return doc
-    }
-}
-
-extension Document : ResponseRepresentable {
-    public func makeResponse() throws -> Response {
-        return Response(status: .ok, headers: [
-            "Content-Type": "application/json; charset=utf-8"
-            ], body: Body(self.makeExtendedJSON().serialize()))
-    }
-}
-
-extension JSONObject : ResponseRepresentable {
-    public func makeResponse() throws -> Response {
-        return Response(status: .ok, headers: [
-            "Content-Type": "application/json; charset=utf-8"
-            ], body: Body(self.serialize()))
-    }
-}
-
-extension JSONArray : ResponseRepresentable {
-    public func makeResponse() throws -> Response {
-        return Response(status: .ok, headers: [
-            "Content-Type": "application/json; charset=utf-8"
-            ], body: Body(self.serialize()))
     }
 }

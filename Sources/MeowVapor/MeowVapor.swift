@@ -4,6 +4,7 @@ import Sessions
 import ExtendedJSON
 
 extension Request {
+    /// Returns a Cheetah JSONObject from a request if the contents are a JSON Object
     public var jsonObject: JSONObject? {
         guard let bytes = self.body.bytes else {
             return nil
@@ -12,6 +13,16 @@ extension Request {
         return try? JSONObject(from: bytes)
     }
     
+    /// Returns a Cheetah JSONArray from a request if the contents are a JSON Array
+    public var jsonArray: JSONObject? {
+        guard let bytes = self.body.bytes else {
+            return nil
+        }
+        
+        return try? JSONArray(from: bytes)
+    }
+    
+    /// Returns a Docuement deserialized from the request's extendedJSON contents
     public var document: Document? {
         guard let bytes = self.body.bytes else {
             return nil
@@ -26,6 +37,7 @@ extension Request {
 }
 
 extension Document {
+    /// Recards a Document with a projection
     public func redacting(_ projection: Projection) -> Document {
         var doc: Document = [
             "_id": self["_id"]

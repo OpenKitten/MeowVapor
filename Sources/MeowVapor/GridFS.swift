@@ -5,6 +5,7 @@ import HTTP
 import Vapor
 
 extension File : ResponseRepresentable {
+    /// Returns a GridFS file as a response
     public func makeResponse() throws -> Response {
         guard let file = try GridFS.default.findOne(byID: id) else {
             throw Abort.notFound
@@ -27,6 +28,7 @@ extension File : ResponseRepresentable {
 }
 
 extension Optional where Wrapped : ResponseRepresentable {
+    /// Returns an optional if it contains something
     public func makeResponse() throws -> Response {
         guard let wrapped = self else {
             throw Abort.notFound

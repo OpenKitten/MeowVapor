@@ -19,6 +19,18 @@ open class ModelController<M : Model & StringInitializable>: ResourceRepresentab
     open var sortFields: Set<M.Key> = []
     open var makeImplicitValues: ((Request) throws -> M.Values)?
     
+    open func formatPagination(_ result: M.PaginatedFindResult, for request: Request) -> ResponseRepresentable {
+        return [
+            "total": result.total,
+            "per_page": result.perPage,
+            "current_page": result.currentPage,
+            "lastPage": result.lastPage,
+            "from": result.from,
+            "to": result.to,
+            "data": result.data.map{ $0.serialize() }.makeDocument()
+            ] as Document
+    }
+    
     open func makeResource() -> Resource<M> {
         return Resource(
             index: index,
@@ -60,20 +72,10 @@ open class ModelController<M : Model & StringInitializable>: ResourceRepresentab
                                                            allowFiltering: filterFields,
                                                            allowSorting: sortFields)
         
-        let data = result.data.map{ $0.serialize() }.makeDocument()
-        
         if usedPagination {
-            return [
-                "total": result.total,
-                "per_page": result.perPage,
-                "current_page": result.currentPage,
-                "lastPage": result.lastPage,
-                "from": result.from,
-                "to": result.to,
-                "data": data
-            ] as Document
+            return formatPagination(result, for: request)
         } else {
-            return data
+            return result.data.map{ $0.serialize() }.makeDocument()
         }
     }
     
@@ -86,9 +88,9 @@ open class ModelController<M : Model & StringInitializable>: ResourceRepresentab
             document += append.serialize()
         }
         
-        _ = try M(newFrom: document)
+        let model = try M(newFrom: document)
         
-        return Response(status: .noContent)
+        return ["_id": model._id] as Document
     }
     
 }

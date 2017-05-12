@@ -36,7 +36,7 @@ open class ModelController<M : Model & Parameterizable>: ResourceRepresentable {
             index: index,
             create: create,
             show: show,
-            edit: edit,
+            update: update,
             destroy: destroy
         )
     }
@@ -56,7 +56,7 @@ open class ModelController<M : Model & Parameterizable>: ResourceRepresentable {
         return Response(status: .noContent)
     }
     
-    open func edit(request: Request, instance: M) throws -> ResponseRepresentable {
+    open func update(request: Request, instance: M) throws -> ResponseRepresentable {
         guard let document = request.document else {
             throw Abort.badRequest
         }
@@ -120,9 +120,9 @@ open class ClosureBasedAccessControlModelController<M : Model & Parameterizable>
     /// Throw from the closure to prevent the request from executing.
     open var showAccessChecker: SingleAccessChecker?
     
-    /// A closure that runs before every edit operation.
+    /// A closure that runs before every update operation.
     /// Throw from the closure to prevent the request from executing.
-    open var editAccessChecker: SingleAccessChecker?
+    open var updateAccessChecker: SingleAccessChecker?
     
     /// A closure that runs before every destroy operation.
     /// Throw from the closure to prevent the request from executing.
@@ -150,12 +150,12 @@ open class ClosureBasedAccessControlModelController<M : Model & Parameterizable>
         return try super.index(request: request)
     }
     
-    open override func edit(request: Request, instance: M) throws -> ResponseRepresentable {
+    open override func update(request: Request, instance: M) throws -> ResponseRepresentable {
         try genericChecker?(request)
         try instanceAccessChecker?(request, instance)
-        try editAccessChecker?(request, instance)
+        try updateAccessChecker?(request, instance)
         
-        return try super.edit(request: request, instance: instance)
+        return try super.update(request: request, instance: instance)
     }
     
     open override func destroy(request: Request, instance: M) throws -> ResponseRepresentable {

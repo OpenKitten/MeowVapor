@@ -1,0 +1,10 @@
+// MARK: Slugs.ejs
+extension <%- serializable.name %> : Parameterizable {
+	static var uniqueSlug: String { 
+		return "<%- underscoreCase(uncamel(serializable.name)) %>"
+	}
+	
+	static func make(for parameter: String) throws -> <%- serializable.name %> {
+		return try Meow.Helpers.requireValue(<%- serializable.name %>.findOne("_id" == ObjectId(parameter)), keyForError: "<%- serializable.name %> from URL parameter")
+	}
+}

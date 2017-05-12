@@ -14,7 +14,7 @@ extension Request {
     }
     
     /// Returns a Cheetah JSONArray from a request if the contents are a JSON Array
-    public var jsonArray: JSONObject? {
+    public var jsonArray: JSONArray? {
         guard let bytes = self.body.bytes else {
             return nil
         }

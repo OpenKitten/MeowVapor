@@ -11,7 +11,7 @@ extension BaseModel where Self : StringInitializable {
     }
 }
 
-open class ModelController<M : Model & StringInitializable>: ResourceRepresentable {
+open class ModelController<M : Model & Parameterizable>: ResourceRepresentable {
     
     public init() {}
     
@@ -34,9 +34,9 @@ open class ModelController<M : Model & StringInitializable>: ResourceRepresentab
     open func makeResource() -> Resource<M> {
         return Resource(
             index: index,
-            store: store,
+            create: create,
             show: show,
-            modify: modify,
+            edit: edit,
             destroy: destroy
         )
     }
@@ -56,7 +56,7 @@ open class ModelController<M : Model & StringInitializable>: ResourceRepresentab
         return Response(status: .noContent)
     }
     
-    open func modify(request: Request, instance: M) throws -> ResponseRepresentable {
+    open func edit(request: Request, instance: M) throws -> ResponseRepresentable {
         guard let document = request.document else {
             throw Abort.badRequest
         }
@@ -79,7 +79,7 @@ open class ModelController<M : Model & StringInitializable>: ResourceRepresentab
         }
     }
     
-    open func store(request: Request) throws -> ResponseRepresentable {
+    open func create(request: Request) throws -> ResponseRepresentable {
         guard var document = request.document else {
             throw Abort.badRequest
         }
@@ -95,7 +95,7 @@ open class ModelController<M : Model & StringInitializable>: ResourceRepresentab
     
 }
 
-open class ClosureBasedAccessControlModelController<M : Model & StringInitializable> : ModelController<M> {
+open class ClosureBasedAccessControlModelController<M : Model & Parameterizable> : ModelController<M> {
     
     public typealias MultipleAccessChecker = (Request) throws -> Void
     public typealias SingleAccessChecker = (Request, M) throws -> Void
@@ -112,17 +112,17 @@ open class ClosureBasedAccessControlModelController<M : Model & StringInitializa
     /// Throw from the closure to prevent the request from executing.
     open var indexAccessChecker: MultipleAccessChecker?
     
-    /// A closure that runs before every store operation.
+    /// A closure that runs before every create operation.
     /// Throw from the closure to prevent the request from executing.
-    open var storeAccessChecker: MultipleAccessChecker?
+    open var createAccessChecker: MultipleAccessChecker?
     
     /// A closure that runs before every show operation.
     /// Throw from the closure to prevent the request from executing.
     open var showAccessChecker: SingleAccessChecker?
     
-    /// A closure that runs before every modify operation.
+    /// A closure that runs before every edit operation.
     /// Throw from the closure to prevent the request from executing.
-    open var modifyAccessChecker: SingleAccessChecker?
+    open var editAccessChecker: SingleAccessChecker?
     
     /// A closure that runs before every destroy operation.
     /// Throw from the closure to prevent the request from executing.
@@ -136,11 +136,11 @@ open class ClosureBasedAccessControlModelController<M : Model & StringInitializa
         return try super.show(request: request, instance: instance)
     }
     
-    open override func store(request: Request) throws -> ResponseRepresentable {
+    open override func create(request: Request) throws -> ResponseRepresentable {
         try genericChecker?(request)
-        try storeAccessChecker?(request)
+        try createAccessChecker?(request)
         
-        return try super.store(request: request)
+        return try super.create(request: request)
     }
     
     open override func index(request: Request) throws -> ResponseRepresentable {
@@ -150,12 +150,12 @@ open class ClosureBasedAccessControlModelController<M : Model & StringInitializa
         return try super.index(request: request)
     }
     
-    open override func modify(request: Request, instance: M) throws -> ResponseRepresentable {
+    open override func edit(request: Request, instance: M) throws -> ResponseRepresentable {
         try genericChecker?(request)
         try instanceAccessChecker?(request, instance)
-        try modifyAccessChecker?(request, instance)
+        try editAccessChecker?(request, instance)
         
-        return try super.modify(request: request, instance: instance)
+        return try super.edit(request: request, instance: instance)
     }
     
     open override func destroy(request: Request, instance: M) throws -> ResponseRepresentable {

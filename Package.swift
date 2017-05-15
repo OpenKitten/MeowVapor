@@ -3,8 +3,7 @@ import PackageDescription
 let package = Package(
     name: "MeowVapor",
     targets: [
-        Target(name: "MeowVapor"),
-        Target(name: "MeowVaporSample", dependencies: ["MeowVapor"])
+        Target(name: "MeowVapor")
     ],
     dependencies: [
         .Package(url: "https://github.com/OpenKitten/Meow.git", Version(0,0,923)),

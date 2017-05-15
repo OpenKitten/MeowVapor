@@ -34,7 +34,7 @@ open class ModelController<M : Model & Parameterizable>: ResourceRepresentable {
     open func makeResource() -> Resource<M> {
         return Resource(
             index: index,
-            create: create,
+            store: store,
             show: show,
             update: update,
             destroy: destroy
@@ -79,7 +79,7 @@ open class ModelController<M : Model & Parameterizable>: ResourceRepresentable {
         }
     }
     
-    open func create(request: Request) throws -> ResponseRepresentable {
+    open func store(request: Request) throws -> ResponseRepresentable {
         guard var document = request.document else {
             throw Abort.badRequest
         }
@@ -112,9 +112,9 @@ open class ClosureBasedAccessControlModelController<M : Model & Parameterizable>
     /// Throw from the closure to prevent the request from executing.
     open var indexAccessChecker: MultipleAccessChecker?
     
-    /// A closure that runs before every create operation.
+    /// A closure that runs before every store operation.
     /// Throw from the closure to prevent the request from executing.
-    open var createAccessChecker: MultipleAccessChecker?
+    open var storeAccessChecker: MultipleAccessChecker?
     
     /// A closure that runs before every show operation.
     /// Throw from the closure to prevent the request from executing.
@@ -136,11 +136,11 @@ open class ClosureBasedAccessControlModelController<M : Model & Parameterizable>
         return try super.show(request: request, instance: instance)
     }
     
-    open override func create(request: Request) throws -> ResponseRepresentable {
+    open override func store(request: Request) throws -> ResponseRepresentable {
         try genericChecker?(request)
-        try createAccessChecker?(request)
+        try storeAccessChecker?(request)
         
-        return try super.create(request: request)
+        return try super.store(request: request)
     }
     
     open override func index(request: Request) throws -> ResponseRepresentable {

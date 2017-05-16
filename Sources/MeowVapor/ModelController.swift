@@ -47,7 +47,7 @@ open class ModelController<M : Model & Parameterizable>: ResourceRepresentable {
     }
     
     open func show(request: Request, instance: M) throws -> ResponseRepresentable {
-        return instance.serialize()
+        return instance.makeApiView()
     }
     
     open func destroy(request: Request, instance: M) throws -> ResponseRepresentable {
@@ -57,9 +57,11 @@ open class ModelController<M : Model & Parameterizable>: ResourceRepresentable {
     }
     
     open func update(request: Request, instance: M) throws -> ResponseRepresentable {
-        guard let document = request.document else {
+        guard var document = request.document else {
             throw Abort.badRequest
         }
+        
+        document = M.makeModelDocument(from: document)
         
         try instance.update(with: document)
         
@@ -84,9 +86,13 @@ open class ModelController<M : Model & Parameterizable>: ResourceRepresentable {
             throw Abort.badRequest
         }
         
+        document = M.makeModelDocument(from: document)
+        
         if let append = try makeImplicitValues?(request) {
             document += append.serialize()
         }
+        
+        try M.validateUpdate(with: document)
         
         let model = try M(newFrom: document)
         

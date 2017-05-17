@@ -24,7 +24,7 @@ open class ModelController<M : Model & Parameterizable>: ResourceRepresentable {
             "total": result.total,
             "per_page": result.perPage,
             "current_page": result.currentPage,
-            "lastPage": result.lastPage,
+            "last_page": result.lastPage,
             "from": result.from,
             "to": result.to,
             "data": result.data.map{ $0.serialize() }.makeDocument()

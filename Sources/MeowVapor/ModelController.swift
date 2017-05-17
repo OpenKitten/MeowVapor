@@ -18,6 +18,7 @@ open class ModelController<M : Model & Parameterizable>: ResourceRepresentable {
     open var filterFields: Set<M.Key> = []
     open var sortFields: Set<M.Key> = []
     open var makeImplicitValues: ((Request) throws -> M.Values)?
+    open var privateFields: Set<M.Key> = []
     
     open func formatPagination(_ result: M.PaginatedFindResult, for request: Request) -> ResponseRepresentable {
         return [
@@ -47,7 +48,7 @@ open class ModelController<M : Model & Parameterizable>: ResourceRepresentable {
     }
     
     open func show(request: Request, instance: M) throws -> ResponseRepresentable {
-        return instance.makeApiView()
+        return makeApiView(from: instance, for: request)
     }
     
     open func destroy(request: Request, instance: M) throws -> ResponseRepresentable {
@@ -61,7 +62,7 @@ open class ModelController<M : Model & Parameterizable>: ResourceRepresentable {
             throw Abort.badRequest
         }
         
-        document = M.makeModelDocument(from: document)
+        document = makeModelDocument(from: document, for: request)
         
         try instance.update(with: document)
         
@@ -86,7 +87,7 @@ open class ModelController<M : Model & Parameterizable>: ResourceRepresentable {
             throw Abort.badRequest
         }
         
-        document = M.makeModelDocument(from: document)
+        document = makeModelDocument(from: document, for: request)
         
         if let append = try makeImplicitValues?(request) {
             document += append.serialize()
@@ -97,6 +98,42 @@ open class ModelController<M : Model & Parameterizable>: ResourceRepresentable {
         let model = try M(newFrom: document)
         
         return ["_id": model._id] as Document
+    }
+    
+    open func makeApiView(from instance: M, for request: Request) -> Document {
+        var document = instance.serialize() as Document
+        
+        for field in privateFields {
+            document[field.keyString] = nil
+        }
+        
+        for key in M.Key.all where key.type is BaseModel.Type {
+            guard let id = ObjectId(document[key.keyString]["$id"]) else {
+                continue
+            }
+            
+            document[key.keyString] = id
+        }
+        
+        return document
+    }
+    
+    open func makeModelDocument(from input: Document, for request: Request) -> Document {
+        var document = input
+        
+        for field in privateFields {
+            document[field.keyString] = nil
+        }
+        
+        for key in M.Key.all {
+            guard let type = key.type as? BaseModel.Type, let id = ObjectId(document[key.keyString]) else {
+                continue
+            }
+            
+            document[key.keyString] = DBRef(referencing: id, inCollection: type.collection)
+        }
+        
+        return document
     }
     
 }

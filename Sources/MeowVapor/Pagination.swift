@@ -30,16 +30,16 @@ extension Model {
         baseQuery: MongoKitten.Query = Query(Document()),
         allowFiltering filterFields: Set<Self.Key> = [],
         allowSorting sortFields: Set<Self.Key> = [],
-        maximumPerPage: Int = 1000
+        maximumPerPage: Int? = 1000
         ) throws -> (result: PaginatedFindResult, usedPagination: Bool) {
         
         let specifiedPage: Int? = try request.query?.get("page")
-        var perPage: Int = try request.query?.get("per_page") ?? maximumPerPage
+        var perPage: Int? = try request.query?.get("per_page") ?? maximumPerPage
         let page: Int = specifiedPage ?? 1
         let sortSpecification = (try request.query?.get("sort") as String?) ?? ""
         let filterSpecification = (try request.query?.get("filter") as String?) ?? ""
         
-        if perPage > maximumPerPage {
+        if let givenPerPage = perPage, let maximumPerPage = maximumPerPage, givenPerPage > maximumPerPage {
             perPage = maximumPerPage
         }
         

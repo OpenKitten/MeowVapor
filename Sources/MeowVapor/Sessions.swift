@@ -9,12 +9,12 @@ public class MongoSessions : SessionsProtocol {
     let collection: MongoKitten.Collection
     
     /// Creates a session storage around a collection
-    init(in collection: MongoKitten.Collection) {
+    public init(in collection: MongoKitten.Collection) {
         self.collection = collection
     }
     
     /// Creates a session storage around the `_sessions` collection in this database
-    init(in database: MongoKitten.Database) {
+    public init(in database: MongoKitten.Database) {
         self.collection = database["_sessions"]
     }
     
@@ -47,7 +47,7 @@ public class MongoSessions : SessionsProtocol {
 
 extension Session {
     /// The session storage (BSON required)
-    var document: Document {
+    public var document: Document {
         get {
             return (self.data.context as? Document) ?? [:]
         }

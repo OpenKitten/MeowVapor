@@ -44,7 +44,7 @@ extension Model {
         }
         
         let finalQuery = try parseFilterString(filterSpecification, fields: filterFields) && baseQuery
-        let finalSort: Sort? = try parseSortString(sortSpecification, fields: sortFields)
+        let finalSort = try parseSortString(sortSpecification, fields: sortFields)
         
         let result = try Self.paginatedFind(finalQuery,
                                             sortedBy: finalSort,
@@ -54,9 +54,8 @@ extension Model {
         return (result: result, usedPagination: specifiedPage != nil)
     }
     
-    private static func parseSortString(_ spec: String, fields: Set<Self.Key>) throws -> Sort? {
-        let fieldKeys = fields.map { $0.keyString }
-        var sortDocument = Document()
+    private static func parseSortString(_ spec: String, fields: Set<Self.Key>) throws -> [Key : SortOrder]? {
+        var sortSpecification = [Key : SortOrder]()
         
         for sort in spec.components(separatedBy: ",") where !sort.isEmpty {
             let pieces = sort.components(separatedBy: "|")
@@ -65,24 +64,23 @@ extension Model {
                 continue
             }
             
-            let key = pieces[0]
-            
-            guard fieldKeys.contains(key) else {
-                throw FindError.unsortableField(key)
+            guard let key = fields.first(where: { $0.keyString == pieces[0] }) else {
+                throw FindError.unsortableField(pieces[0])
             }
             
             let method = pieces[1].lowercased()
             
             if method == "asc" {
-                sortDocument[key] = Int32(1)
+                sortSpecification[key] = .ascending
             } else if method == "desc" {
-                sortDocument[key] = Int32(-1)
+                sortSpecification[key] = .descending
             } else {
+                // TODO: Throw?
                 continue
             }
         }
         
-        return sortDocument.count > 0 ? Sort(sortDocument.flattened()) : nil
+        return sortSpecification.count > 0 ? sortSpecification : nil
     }
     
     private static func parseFilterString(_ spec: String, fields: Set<Self.Key>) throws -> Query {

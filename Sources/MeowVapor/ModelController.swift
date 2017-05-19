@@ -15,10 +15,24 @@ open class ModelController<M : Model & Parameterizable>: ResourceRepresentable {
     
     public init() {}
     
+    /// The fields that are available for filtering. A MongoDB query may be generated based on the request for these properties.
     open var filterFields: Set<M.Key> = []
+    
+    /// The fields that are available for filtering. A MongoDB sort operation may be generated based on the request for these properties.
     open var sortFields: Set<M.Key> = []
+    
+    /// Set this closure to allow for implicit/default values.
+    ///
+    /// It is used with `store` requests. You can use this closure to infer certain values from the request.
     open var makeImplicitValues: ((Request) throws -> M.Values)?
+    
+    /// The properties you include here will never be included by the default implementation of `makeApiView`.
+    /// If you specify the same property in both `privateFields` and `alwaysInclude`, the property will never be included (`privateFields` is more important).
     open var privateFields: Set<M.Key> = []
+    
+    /// The properties you include here will always be included in a request, even if the query parameter `include` does not specify them.
+    /// If you specify the same property in both `privateFields` and `alwaysInclude`, the property will never be included (`privateFields` is more important).
+    open var alwaysInclude: Set<M.Key> = []
     
     open func formatPagination(_ result: M.PaginatedFindResult, for request: Request) -> ResponseRepresentable {
         return [
@@ -28,7 +42,7 @@ open class ModelController<M : Model & Parameterizable>: ResourceRepresentable {
             "last_page": result.lastPage,
             "from": result.from,
             "to": result.to,
-            "data": result.data.map{ $0.serialize() }.makeDocument()
+            "data": result.data.map{ makeApiView(from: $0, for: request) }.makeDocument()
             ] as Document
     }
     
@@ -78,7 +92,7 @@ open class ModelController<M : Model & Parameterizable>: ResourceRepresentable {
         if usedPagination {
             return formatPagination(result, for: request)
         } else {
-            return result.data.map{ $0.serialize() }.makeDocument()
+            return result.data.map{ makeApiView(from: $0, for: request) }.makeDocument()
         }
     }
     
@@ -115,6 +129,16 @@ open class ModelController<M : Model & Parameterizable>: ResourceRepresentable {
             document[key.keyString] = id
         }
         
+        if var included = parseIncludeParameter(request.query?["include"]?.string ?? "") {
+            included.formUnion(alwaysInclude.map { $0.keyString })
+            
+            for key in document.keys {
+                if !included.contains(key) {
+                    document[key] = nil
+                }
+            }
+        }
+        
         return document
     }
     
@@ -134,6 +158,20 @@ open class ModelController<M : Model & Parameterizable>: ResourceRepresentable {
         }
         
         return document
+    }
+    
+    open func parseIncludeParameter(_ include: String) -> Set<String>? {
+        guard include.characters.count > 0 else {
+            return nil
+        }
+        
+        let parts = include.components(separatedBy: ",")
+        
+        guard parts.count > 0 else {
+            return nil
+        }
+        
+        return Set(parts)
     }
     
 }

@@ -29,7 +29,7 @@ extension GridFS.File : ResponseRepresentable {
                                    named: file.name,
                                    withType: file.contentType)
         
-        return try GridFS.File.restore(id)
+        return try GridFS.File.restore(id, key: "file from request")
     }
 }
 

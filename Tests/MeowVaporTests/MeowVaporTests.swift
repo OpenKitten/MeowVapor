@@ -20,7 +20,7 @@ class MeowVaporTests: XCTestCase {
 //        XCTAssertEqual(try json.makeJSON(), vaporJSON)
 //    }
     
-    static var allTests = [
+//    static var allTests = [
 //        ("testExample", testJSON),
-    ]
+//    ]
 }

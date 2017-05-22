@@ -11,6 +11,12 @@ MeowVapor plugs into [Meow](https://github.com/openkitten/meow) to provide aweso
 
 (will be moved to a separate document once we have docs)
 
+### Installation
+
+Add MeowVapor as a dependency via SPM and run `swift package update`.
+
+In your MeowConfig, specify: `plugins=("MeowVapor")`
+
 ### Minimal setup for basic CRUD
 
 ```swift

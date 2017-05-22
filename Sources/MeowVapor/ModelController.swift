@@ -1,16 +1,6 @@
 import Meow
 import Vapor
 
-extension BaseModel where Self : StringInitializable {
-    public init?(_ string: String) throws {
-        guard let instance = try Self.findOne("_id" == ObjectId(string)) else {
-            return nil
-        }
-        
-        self = instance
-    }
-}
-
 open class ModelController<M : Model & Parameterizable>: ResourceRepresentable {
     
     public init() {}

@@ -75,19 +75,18 @@ extension Binary : NodeConvertible {
 }
 
 extension ObjectId : NodeConvertible {
-    /// Converts the hexString to a Node.string but prefixes the hexstring with `oid:`
+    /// Converts the hexString to a Node.string
     public func makeNode(in context: Context?) -> Node {
         return Node(.string("oid:" + self.hexString))
     }
     
-    /// Checks for and removed the `oid:` prefix and converts the hexString to an Objectid
+    /// Converts the hexString to an Objectid
     public init(node: Node) throws {
-        guard var string = node.string, string.hasPrefix("oid:") else {
+        guard let string = node.string, let id = try? ObjectId(string) else {
             throw NodeError.unableToConvert(input: node, expectation: "\(ObjectId.self)", path: [])
         }
         
-        string.characters.removeFirst(4)
-        self = try ObjectId(string)
+        self = id
     }
 }
 

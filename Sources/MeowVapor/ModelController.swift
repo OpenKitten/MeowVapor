@@ -24,15 +24,15 @@ open class ModelController<M : Model & Parameterizable>: ResourceRepresentable {
     /// If you specify the same property in both `privateFields` and `alwaysInclude`, the property will never be included (`privateFields` is more important).
     open var alwaysInclude: Set<M.Key> = []
     
-    open func formatPagination(_ result: M.PaginatedFindResult, for request: Request) -> ResponseRepresentable {
-        return [
+    open func formatPagination(_ result: M.PaginatedFindResult, for request: Request) throws -> ResponseRepresentable {
+        return try [
             "total": result.total,
             "per_page": result.perPage,
             "current_page": result.currentPage,
             "last_page": result.lastPage,
             "from": result.from,
             "to": result.to,
-            "data": result.data.map{ makeApiView(from: $0, for: request) }.makeDocument()
+            "data": result.data.map{ try makeApiView(from: $0, for: request) }.makeDocument()
             ] as Document
     }
     
@@ -52,7 +52,7 @@ open class ModelController<M : Model & Parameterizable>: ResourceRepresentable {
     }
     
     open func show(request: Request, instance: M) throws -> ResponseRepresentable {
-        return makeApiView(from: instance, for: request)
+        return try makeApiView(from: instance, for: request)
     }
     
     open func destroy(request: Request, instance: M) throws -> ResponseRepresentable {
@@ -66,7 +66,7 @@ open class ModelController<M : Model & Parameterizable>: ResourceRepresentable {
             throw Abort.badRequest
         }
         
-        document = makeModelDocument(from: document, for: request)
+        document = try makeModelDocument(from: document, for: request)
         
         try instance.update(with: document)
         
@@ -80,9 +80,9 @@ open class ModelController<M : Model & Parameterizable>: ResourceRepresentable {
                                                            allowSorting: sortFields)
         
         if usedPagination {
-            return formatPagination(result, for: request)
+            return try formatPagination(result, for: request)
         } else {
-            return result.data.map{ makeApiView(from: $0, for: request) }.makeDocument()
+            return try result.data.map{ try makeApiView(from: $0, for: request) }.makeDocument()
         }
     }
     
@@ -91,7 +91,7 @@ open class ModelController<M : Model & Parameterizable>: ResourceRepresentable {
             throw Abort.badRequest
         }
         
-        document = makeModelDocument(from: document, for: request)
+        document = try makeModelDocument(from: document, for: request)
         
         if let append = try makeImplicitValues?(request) {
             document += append.serialize()
@@ -104,7 +104,12 @@ open class ModelController<M : Model & Parameterizable>: ResourceRepresentable {
         return ["_id": model._id] as Document
     }
     
-    open func makeApiView(from instance: M, for request: Request) -> Document {
+    /// Calls `serialize`, then `alter`
+    open func makeApiView(from instance: M, for request: Request) throws -> Document {
+        return try alterApiView(serialize(from: instance, for: request), for: request)
+    }
+    
+    open func serialize(from instance: M, for request: Request) throws -> Document {
         var document = instance.serialize() as Document
         
         for field in privateFields {
@@ -119,6 +124,12 @@ open class ModelController<M : Model & Parameterizable>: ResourceRepresentable {
             document[key.keyString] = id
         }
         
+        return document
+    }
+    
+    open func alterApiView(_ view: Document, for request: Request) throws -> Document {
+        var document = view
+        
         if var included = parseIncludeParameter(request.query?["include"]?.string ?? "") {
             included.formUnion(alwaysInclude.map { $0.keyString })
             
@@ -132,7 +143,7 @@ open class ModelController<M : Model & Parameterizable>: ResourceRepresentable {
         return document
     }
     
-    open func makeModelDocument(from input: Document, for request: Request) -> Document {
+    open func makeModelDocument(from input: Document, for request: Request) throws -> Document {
         var document = input
         
         for field in privateFields {
@@ -161,7 +172,7 @@ open class ModelController<M : Model & Parameterizable>: ResourceRepresentable {
             return nil
         }
         
-        return Set(parts)
+        return Set(parts + ["_id"])
     }
     
 }

@@ -183,10 +183,34 @@ extension Model {
     }
 }
 
-public enum FindError : Error {
+public enum FindError: Error {
     case unquotedString
     case typeError
     case invalidOperator(String)
     case unfilterableField(String)
     case unsortableField(String)
+}
+
+extension FindError: Vapor.Debuggable {
+    public var reason: String {
+        switch self {
+        case .unquotedString: return "The filter operation string was not properly quoted"
+        case .typeError: return "The actual type and given filter type are not compatible"
+        case .invalidOperator(let op): return "The operator \(op) is not valid in the given context"
+        case .unfilterableField(let field): return "The field '\(field)' is not filterable"
+        case .unsortableField(let field): return "The field '\(field)' is not sortable"
+        }
+    }
+    
+    public var identifier: String {
+        return "FindError"
+    }
+    
+    public var possibleCauses: [String] {
+        return ["The request parameters are not valid"]
+    }
+    
+    public var suggestedFixes: [String] {
+        return ["Adjust the request parameters"]
+    }
 }

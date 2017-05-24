@@ -58,8 +58,8 @@ You can use this to hide a property or to change the way it is displayed. Or to 
 ```swift
 class MyController: ModelController<MyModel> {
 
-    override func makeApiView(from instance: MyModel, for request: Request) -> Document {
-        var base = super.makeApiView(from: instance, for: request)
+    override func serialize(from instance: MyModel, for request: Request) throws -> Document {
+        var base = try super.serialize(from: instance, for: request)
         
         base["reference_property"] = instance.referenceProperty?.propertyFromReference
         base["private_property"] = nil

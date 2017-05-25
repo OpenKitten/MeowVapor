@@ -1,0 +1,6 @@
+// MARK: SessionModel.ejs
+extension <%- serializable.name %> {
+	<%-acl%> static var collection: MongoKitten.Collection {
+		return Meow.database["<%- underscoreCase(uncamel(pluralize(serializable.name))) %>"]
+	}
+}

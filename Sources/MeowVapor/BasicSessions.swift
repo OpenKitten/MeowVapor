@@ -49,10 +49,14 @@ extension Session {
     /// The session storage (BSON required)
     public var document: Document {
         get {
-            return (self.data.context as? Document) ?? [:]
+            if let bytes = self.data.bytes {
+                return Document(data: bytes)
+            }
+            
+            return [:]
         }
         set {
-            self.data.context = newValue
+            self.data = Node.bytes(newValue.bytes)
         }
     }
 }

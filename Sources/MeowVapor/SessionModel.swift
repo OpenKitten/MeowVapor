@@ -17,6 +17,7 @@ public protocol SessionModel : class, SerializableToDocument {
     /// Creates a brand-new Session with default settings
     init()
     
+    /// Used to generate a new random session token
     static func generateSessionToken() -> String
 }
 

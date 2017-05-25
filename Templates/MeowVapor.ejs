@@ -4,6 +4,6 @@
 swiftImport("MeowVapor", "Vapor", "HTTP");
 
 forEachSerializable(serializable => serializable.isModel ? include('Parameterizable', {serializable}) : "");
-forEachSerializable(serializable => !!serializable.based["SessionModel"]; ? include('SessionModel', {serializable}) : "");
+forEachSerializable(serializable => !!serializable.based["SessionModel"] ? include('SessionModel', {serializable}) : "");
 
 -%>

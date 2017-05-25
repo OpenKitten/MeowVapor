@@ -210,7 +210,7 @@ extension UserSession : SerializableToDocument {
 	public static func validateUpdate(with document: Document) throws {
 		let keys = document.keys
 		if keys.contains(Key.user.keyString) {
-			_ = (try document.unpack(Key.user.keyString)) as Reference<User>
+			_ = (try document.unpack(Key.user.keyString)) as User
 		}
 	}
 
@@ -240,7 +240,7 @@ extension UserSession : SerializableToDocument {
 		public var type: Any.Type {
 			switch self {
 			
-			case .user: return Reference<User>.self
+			case .user: return User.self
 			}
 		}
 
@@ -262,7 +262,7 @@ extension UserSession : SerializableToDocument {
 			try self.update(with: document)
 		}
 
-		public var user: Reference<User>?
+		public var user: User?
 
 
 		public func serialize() -> Document {
@@ -300,8 +300,8 @@ public struct VirtualInstance : VirtualModelInstance {
 	
 
 	
-		 /// user: Reference<User>?
-		 
+		 /// user: User?
+		 public var user: User.VirtualInstance { return .init(keyPrefix: referencedKeyPrefix + Key.user.keyString, isReference: true) } 
 
 	public init(keyPrefix: String = "", isReference: Bool = false) {
 		self.keyPrefix = keyPrefix

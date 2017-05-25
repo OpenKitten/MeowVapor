@@ -6,9 +6,7 @@ extension <%- serializable.name %> {
 }
 
 // sourcery:inline:auto:<%- serializable.name %>.MeowVapor
-	<%-acl%> let _id: String = generateSessionToken()
+	<%-acl%> let _id: String = <%-serializable.name%>.generateSessionToken()
 
-    <%-acl%> required init(identifier: String) {
-    	self._id = identifier
-    }
+    <%-acl%> required init(){}
 // sourcery:end

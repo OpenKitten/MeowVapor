@@ -30,7 +30,7 @@ public final class SessionsMiddleware<Model: SessionModel>: Middleware {
         
         if session.shouldDestroy {
             try sessionManager.destroy(identifier: session._id)
-        } else if hash == session.serialize().meowHash {
+        } else if hash != session.serialize().meowHash {
             response.cookies.insert(cookie)
             try sessionManager.set(session)
         }

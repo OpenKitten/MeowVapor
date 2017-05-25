@@ -1,5 +1,7 @@
+import Cookies
 import XCTest
 @testable import MeowVapor
+import HTTP
 
 class MeowVaporTests: XCTestCase {
 //    func testJSON() throws {
@@ -20,8 +22,57 @@ class MeowVaporTests: XCTestCase {
 //        XCTAssertEqual(try json.makeJSON(), vaporJSON)
 //    }
     
+    override func setUp() {
+        try! Meow.init("mongodb://localhost/meowvapor")
+    }
+    
     func testSessions() throws {
+        let middleware = SessionsMiddleware<UserSession>()
         
+        func runRequest(method: HTTP.Method = .get, uri: String = "login", cookies: Cookies = Cookies(), _ closure: @escaping BasicResponder.Closure) throws -> Response {
+            let request = Request(method: method, uri: uri)
+            request.cookies = cookies
+            
+            return try middleware.respond(to: request, chainingTo: BasicResponder(closure))
+        }
+        
+        let user = User(username: "Joannis")
+        try user.save()
+        
+        var response = try runRequest { request in
+            guard let userSession = UserSession.current(for: request) else {
+                XCTFail()
+                return "fail".makeResponse()
+            }
+            
+            XCTAssertNil(userSession.user)
+            
+            userSession.user = user
+            
+            XCTAssertNotNil(userSession.user)
+            
+            return "success".makeResponse()
+        }
+        
+        XCTAssertEqual(response.body.bytes ?? [], "success".makeResponse().body.bytes ?? [])
+        
+        response = try runRequest(cookies: response.cookies) { request in
+            guard let userSession = UserSession.current(for: request) else {
+                XCTFail()
+                return "fail".makeResponse()
+            }
+            
+            XCTAssertNotNil(userSession.user)
+            XCTAssertEqual(userSession.user?.username, "Joannis")
+            
+            userSession.user = user
+            
+            XCTAssertNotNil(userSession.user)
+            
+            return "success".makeResponse()
+        }
+        
+        XCTAssertEqual(response.body.bytes ?? [], "success".makeResponse().body.bytes ?? [])
     }
     
 //    static var allTests = [
@@ -30,14 +81,12 @@ class MeowVaporTests: XCTestCase {
 }
 
 class UserSession : SessionModel {
-    var user: Reference<User>? = nil
+    var user: User? = nil
 
 // sourcery:inline:auto:UserSession.MeowVapor
-	public let _id: String = generateSessionToken()
+	public let _id: String = UserSession.generateSessionToken()
 
-    public required init(identifier: String) {
-    	self._id = identifier
-    }
+    public required init(){}
 // sourcery:end
 
 // sourcery:inline:auto:UserSession.Meow
@@ -63,6 +112,10 @@ class UserSession : SessionModel {
 
 final class User : Model {
     var username: String
+    
+    init(username: String) {
+        self.username = username
+    }
 
 // sourcery:inline:auto:User.Meow
 	@available(*, unavailable, message: "This API is internal to Meow. You can create a new instance using your own inits or using init(newFrom:).")

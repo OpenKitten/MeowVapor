@@ -8,11 +8,6 @@ public class SessionManager<Model : SessionModel> {
     /// Creates a session storage for a SessionModel
     public init() {}
     
-    /// Creates a new session token
-    public func makeIdentifier() throws -> String {
-        return try Crypto.Random.bytes(count: 20).base64Encoded.makeString()
-    }
-    
     /// Gets the session for this token
     public func get(identifier: String) throws -> Model? {
         return try Model.get(byIdentifier: identifier)

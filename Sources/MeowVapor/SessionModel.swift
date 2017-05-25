@@ -1,24 +1,23 @@
+import Crypto
 import MongoKitten
 
 /// A Model that keeps track of a session for your user. Can be customized to hold any Meow supported data types
-public protocol SessionModel : class {
+///
+/// All variables in the SessionModels except the _id are assumed to have a default value which need not be set in the initializer.
+public protocol SessionModel : class, SerializableToDocument {
     /// The collection in which the session entities will be stored
     static var collection: MongoKitten.Collection { get }
     
     /// A session identifier used in a cookie
     var _id: String { get }
     
-    /// Serializes the Model to a Document
-    func serialize() -> Document
-    
     /// When `true`, it will be destroyed. Can be implemented, for example, to keep sessions alive for a set duration
     var shouldDestroy: Bool { get }
     
-    /// Initializes this Session Model from a Document
-    init?(document: Document) throws
+    /// Creates a brand-new Session with default settings
+    init()
     
-    /// Creates a brand-new Session with default settings using an identifier
-    init(identifier: String)
+    static func generateSessionToken() -> String
 }
 
 extension SessionModel {
@@ -30,7 +29,11 @@ extension SessionModel {
             return nil
         }
         
-        return try Self.init(document: document)
+        return try Self.init(restoring: document, key: "")
+    }
+    
+    public static func generateSessionToken() -> String {
+        return try! Crypto.Random.bytes(count: 20).base64Encoded.makeString()
     }
     
     /// When `true`, it will be destroyed. Can be implemented, for example, to keep sessions alive for a set duration

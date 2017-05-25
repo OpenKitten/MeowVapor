@@ -4,3 +4,11 @@ extension <%- serializable.name %> {
 		return Meow.database["<%- underscoreCase(uncamel(pluralize(serializable.name))) %>"]
 	}
 }
+
+// sourcery:inline:auto:<%- serializable.name %>.MeowVapor
+	<%-acl%> let _id: String = generateSessionToken()
+
+    <%-acl%> required init(identifier: String) {
+    	self._id = identifier
+    }
+// sourcery:end

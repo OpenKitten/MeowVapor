@@ -1,9 +1,15 @@
 // MARK: MeowVapor.ejs
 <%
 
+window.sessionModels = (types.based["SessionModel"] || []);
+
 swiftImport("MeowVapor", "Vapor", "HTTP");
 
+sessionModels.forEach(sessionModel => {
+	ensureSerializable(sessionModel);
+});
+
 forEachSerializable(serializable => serializable.isModel ? include('Parameterizable', {serializable}) : "");
-forEachSerializable(serializable => !!serializable.based["SessionModel"] ? include('SessionModel', {serializable}) : "");
+forEachSerializable(serializable => serializable.based["SessionModel"] ? include('SessionModel', {serializable}) : "");
 
 -%>

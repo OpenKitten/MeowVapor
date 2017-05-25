@@ -17,7 +17,7 @@ public final class SessionsMiddleware<Model: SessionModel>: Middleware {
         {
             session = s
         } else {
-            session = Model(identifier: try sessionManager.makeIdentifier())
+            session = Model()
         }
         
         request.sessionModel = session

@@ -1,7 +1,11 @@
+import JSON
 import Cookies
 import XCTest
 @testable import MeowVapor
 import HTTP
+import struct Cheetah.JSONArray
+import struct Cheetah.JSONObject
+import protocol Cheetah.Value
 
 class MeowVaporTests: XCTestCase {
 //    func testJSON() throws {
@@ -25,6 +29,28 @@ class MeowVaporTests: XCTestCase {
     override func setUp() {
         try! Meow.init("mongodb://localhost/meowvapor")
         try! Meow.database.drop()
+    }
+    
+    func testCheetahVaporJSONConversion() throws {
+        let json: JSON = [
+            "key": 3,
+            "pi": 3.14,
+            "username": "Henk",
+            "admin": true,
+            "nums": [1, 2, 3, 4, 5, 6, 7, 9]
+        ]
+        
+        let cheetahJSON = try JSONObject(json: json)
+        
+        XCTAssertEqual(cheetahJSON, [
+            "key": 3,
+            "pi": 3.14,
+            "username": "Henk",
+            "admin": true,
+            "nums": [1, 2, 3, 4, 5, 6, 7, 9] as JSONArray
+        ])
+        
+        XCTAssertEqual(try cheetahJSON.makeJSON(), json)
     }
     
     func testSessions() throws {

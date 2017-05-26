@@ -2,18 +2,23 @@ import HTTP
 import Crypto
 import MongoKitten
 
+/// An entity that can be initialized from a request.
+///
+/// Useful for Form and JSON input that read the body as well as Sessions that read the headers.
+public protocol RequestInitializable {
+    /// Creates a brand-new Session with default settings
+    init?(for request: Request) throws
+}
+
 /// A Model that keeps track of a session for your user. Can be customized to hold any Meow supported data types
 ///
 /// All variables in the SessionModels except the _id are assumed to have a default value which need not be set in the initializer.
-public protocol SessionBaseModel : BaseModel {
+public protocol SessionBaseModel : BaseModel, RequestInitializable {
     /// A session identifier used in a cookie
     var sessionToken: String { get }
     
     /// When `true`, it will be destroyed. Can be implemented, for example, to keep sessions alive for a set duration
     var shouldDestroy: Bool { get }
-    
-    /// Creates a brand-new Session with default settings
-    init?(for request: Request) throws
     
     /// Used to generate a new random session token
     static func generateSessionToken() -> String

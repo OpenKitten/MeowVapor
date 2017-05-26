@@ -34,6 +34,9 @@ extension User : SerializableToDocument {
 		var document: Document = [:]
 		document.pack(self._id, as: "_id")
 		document.pack(self.username, as: Key.username.keyString)
+        
+
+
 		return document
 	}
 
@@ -63,11 +66,11 @@ extension User : SerializableToDocument {
 
 	// MARK: ModelResolvingFunctions.ejs
 
-	
+
 	public static func byId(_ value: ObjectId) throws -> User? {
 		return try User.findOne("_id" == value)
 	}
-	
+
 
 
 
@@ -202,8 +205,11 @@ extension UserSession : SerializableToDocument {
 
 	public func serialize() -> Document {
 		var document: Document = [:]
-		
+		document.pack(self._id, as: "_id")
 		document.pack(self.user, as: Key.user.keyString)
+        document.pack(self.sessionToken, as: "sessionToken") 
+
+
 		return document
 	}
 
@@ -227,11 +233,27 @@ extension UserSession : SerializableToDocument {
 	}
 
 	
+	
+	public static let collection: MongoKitten.Collection = Meow.database["user_sessions"]
+	
+
+	// MARK: ModelResolvingFunctions.ejs
+
+
+	public static func byId(_ value: ObjectId) throws -> UserSession? {
+		return try UserSession.findOne("_id" == value)
+	}
+
+
+
+
+
+	
 
 	// MARK: KeyEnum.ejs
 
 	public enum Key : String, ModelKey {
-		
+		case _id
 		case user = "user"
 
 
@@ -239,13 +261,13 @@ extension UserSession : SerializableToDocument {
 
 		public var type: Any.Type {
 			switch self {
-			
+			case ._id: return ObjectId.self
 			case .user: return User.self
 			}
 		}
 
 		public static var all: Set<Key> {
-			return [.user]
+			return [._id, .user]
 		}
 	}
 
@@ -289,7 +311,7 @@ public struct VirtualInstance : VirtualModelInstance {
 	/// Compares this model's VirtualInstance type with an actual model and generates a Query
 	public static func ==(lhs: VirtualInstance, rhs: UserSession?) -> Query {
 		
-		return lhs.referencedKeyPrefix == rhs?.serialize()
+		return (lhs.referencedKeyPrefix + "_id") == rhs?._id
 		
 	}
 
@@ -298,6 +320,10 @@ public struct VirtualInstance : VirtualModelInstance {
 	public let isReference: Bool
 
 	
+	public var _id: VirtualObjectId {
+		return VirtualObjectId(name: referencedKeyPrefix + Key._id.keyString)
+	}
+	
 
 	
 		 /// user: User?
@@ -305,7 +331,7 @@ public struct VirtualInstance : VirtualModelInstance {
 
 	public init(keyPrefix: String = "", isReference: Bool = false) {
 		self.keyPrefix = keyPrefix
-		self.isReference = false
+		self.isReference = isReference
 	}
 } // end VirtualInstance
 
@@ -324,11 +350,14 @@ extension UserSession : CustomStringConvertible {
 
 
 
+// MARK: Parameterizable.ejs
+extension UserSession : Parameterizable {
+	public static var uniqueSlug: String {
+		return "user_session"
+	}
 
-// MARK: SessionModel.ejs
-extension UserSession {
-	public static var collection: MongoKitten.Collection {
-		return Meow.database["user_sessions"]
+	public static func make(for parameter: String) throws -> UserSession {
+		return try Meow.Helpers.requireValue(UserSession.findOne("_id" == ObjectId(parameter)), keyForError: "UserSession from URL parameter")
 	}
 }
 
@@ -342,15 +371,15 @@ extension Meow {
 	static func `init`(_ connectionString: String) throws {
 		try Meow.init(connectionString, meows)
 	}
-	
+
 	static func `init`(_ db: MongoKitten.Database) {
 		Meow.init(db, meows)
 	}
 }
 
 // 🐈 Statistics
-// Models: 1
-//   User
+// Models: 2
+//   User, UserSession
 // Serializables: 2
 //   User, UserSession
 // Model protocols: 0

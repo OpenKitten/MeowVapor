@@ -24,6 +24,7 @@ class MeowVaporTests: XCTestCase {
     
     override func setUp() {
         try! Meow.init("mongodb://localhost/meowvapor")
+        try! Meow.database.drop()
     }
     
     func testSessions() throws {
@@ -54,6 +55,11 @@ class MeowVaporTests: XCTestCase {
             return "success".makeResponse()
         }
         
+        guard let token = response.cookies[middleware.cookieName] else {
+            XCTFail()
+            return
+        }
+        
         XCTAssertEqual(response.body.bytes ?? [], "success".makeResponse().body.bytes ?? [])
         
         response = try runRequest(cookies: response.cookies) { request in
@@ -65,12 +71,13 @@ class MeowVaporTests: XCTestCase {
             XCTAssertNotNil(userSession.user)
             XCTAssertEqual(userSession.user?.username, "Joannis")
             
-            userSession.user = user
-            
-            XCTAssertNotNil(userSession.user)
-            
             return "success".makeResponse()
         }
+        
+        let sessionUser = try UserSession.findOne("sessionToken" == token)?.user
+        
+        XCTAssertNotNil(sessionUser)
+        XCTAssert(user == sessionUser)
         
         XCTAssertEqual(response.body.bytes ?? [], "success".makeResponse().body.bytes ?? [])
     }
@@ -80,13 +87,14 @@ class MeowVaporTests: XCTestCase {
 //    ]
 }
 
-class UserSession : SessionModel {
+final class UserSession : SessionModel {
     var user: User? = nil
 
+    init?(for request: Request) throws {}
+    
 // sourcery:inline:auto:UserSession.MeowVapor
-	public let _id: String = UserSession.generateSessionToken()
-
-    public required init(){}
+    /// A session identifier used in a cookie
+    public private(set) var sessionToken: String = UserSession.generateSessionToken()
 // sourcery:end
 
 // sourcery:inline:auto:UserSession.Meow
@@ -95,9 +103,11 @@ class UserSession : SessionModel {
 		guard let document = source as? BSON.Document else {
 			throw Meow.Error.cannotDeserialize(type: UserSession.self, source: source, expectedPrimitive: BSON.Document.self)
 		}
-
-		
+        Meow.pool.free(self._id)
+		self._id = try document.unpack("_id")
 		self.user = try document.meowHasValue(Key.user) ? document.unpack(Key.user.keyString) : nil
+        self.sessionToken = try document.unpack("sessionToken")
+
 	}
 
 	public required init(newFrom source: BSON.Primitive) throws {
@@ -106,6 +116,11 @@ class UserSession : SessionModel {
 		}
 		
 		self.user = (try? document.unpack(Key.user.keyString)) ?? self.user
+	}
+	public var _id = Meow.pool.newObjectId() { didSet { Meow.pool.free(oldValue) } }
+
+	deinit {
+		Meow.pool.handleDeinit(self)
 	}
 // sourcery:end
 }
@@ -123,10 +138,11 @@ final class User : Model {
 		guard let document = source as? BSON.Document else {
 			throw Meow.Error.cannotDeserialize(type: User.self, source: source, expectedPrimitive: BSON.Document.self)
 		}
-
-		Meow.pool.free(self._id)
+        Meow.pool.free(self._id)
 		self._id = try document.unpack("_id")
 		self.username = try document.unpack(Key.username.keyString)
+        
+
 	}
 
 	public required init(newFrom source: BSON.Primitive) throws {

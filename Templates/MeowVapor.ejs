@@ -6,10 +6,18 @@ window.sessionModels = (types.based["SessionModel"] || []);
 swiftImport("MeowVapor", "Vapor", "HTTP");
 
 sessionModels.forEach(sessionModel => {
-	ensureSerializable(sessionModel);
+    ensureSerializable(sessionModel);
+
+	if(!window.models.includes(sessionModel)) {
+        window.models.push(sessionModel);
+    }
 });
 
 forEachSerializable(serializable => serializable.isModel ? include('Parameterizable', {serializable}) : "");
-forEachSerializable(serializable => serializable.based["SessionModel"] ? include('SessionModel', {serializable}) : "");
+forEachSerializable(serializable => sessionModels.includes(serializable) ? include('SessionModel', {serializable}) : "");
+
+forEachSerialization(serializable => include('SerializeSessionModel', {serializable}));
+
+forEachDeserialization(serializable => include('DeserializeSessionModel', {serializable}));
 
 -%>

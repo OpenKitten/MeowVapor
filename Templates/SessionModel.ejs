@@ -1,12 +1,4 @@
-// MARK: SessionModel.ejs
-extension <%- serializable.name %> {
-	<%-acl%> static var collection: MongoKitten.Collection {
-		return Meow.database["<%- underscoreCase(uncamel(pluralize(serializable.name))) %>"]
-	}
-}
-
 // sourcery:inline:auto:<%- serializable.name %>.MeowVapor
-	<%-acl%> let _id: String = <%-serializable.name%>.generateSessionToken()
-
-    <%-acl%> required init(){}
+    /// A session identifier used in a cookie
+    public private(set) var sessionToken: String = <%-serializable.name%>.generateSessionToken()
 // sourcery:end

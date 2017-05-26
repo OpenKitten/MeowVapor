@@ -22,8 +22,8 @@ extension GridFS.File : ResponseRepresentable {
         }
     }
     
-    public static func from(_ request: Request, allowing contentTypes: [String]? = nil) throws -> GridFS.File {
-        let file = try request.getFile(allowing: contentTypes)
+    public static func from(_ request: Request, named formName: String = "file", allowing contentTypes: [String]? = nil) throws -> GridFS.File {
+        let file = try request.getFile(allowing: contentTypes, formName: formName)
         
         let id = try Meow.fs.store(data: file.data,
                                    named: file.name,
@@ -34,7 +34,7 @@ extension GridFS.File : ResponseRepresentable {
 }
 
 extension Request {
-    func getFile(allowing contentTypes: [String]? = nil, named name: String = "file") throws -> (contentType: String, name: String?, data: [UInt8]) {
+    func getFile(allowing contentTypes: [String]? = nil, formName name: String = "file") throws -> (contentType: String, name: String?, data: [UInt8]) {
         if let form = self.formData {
             guard let part = form[name]?.part else {
                 throw Abort(.badRequest,

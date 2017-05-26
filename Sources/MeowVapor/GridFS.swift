@@ -34,9 +34,9 @@ extension GridFS.File : ResponseRepresentable {
 }
 
 extension Request {
-    func getFile(allowing contentTypes: [String]? = nil) throws -> (contentType: String, name: String?, data: [UInt8]) {
+    func getFile(allowing contentTypes: [String]? = nil, named name: String = "file") throws -> (contentType: String, name: String?, data: [UInt8]) {
         if let form = self.formData {
-            guard let part = form["file"]?.part else {
+            guard let part = form[name]?.part else {
                 throw Abort(.badRequest,
                                  reason: "File not found in multipart")
             }

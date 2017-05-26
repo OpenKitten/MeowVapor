@@ -116,7 +116,7 @@ class MeowVaporTests: XCTestCase {
 final class UserSession : SessionModel {
     var user: User? = nil
 
-    init?(for request: Request) throws {}
+    init?(from request: Request) throws {}
     
 // sourcery:inline:auto:UserSession.MeowVapor
     /// A session identifier used in a cookie

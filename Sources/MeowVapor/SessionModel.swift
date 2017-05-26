@@ -7,7 +7,7 @@ import MongoKitten
 /// Useful for Form and JSON input that read the body as well as Sessions that read the headers.
 public protocol RequestInitializable {
     /// Creates a brand-new Session with default settings
-    init?(for request: Request) throws
+    init?(from request: Request) throws
 }
 
 /// A Model that keeps track of a session for your user. Can be customized to hold any Meow supported data types

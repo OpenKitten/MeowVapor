@@ -15,6 +15,14 @@ extension Request {
         return try? JSONObject(from: bytes)
     }
     
+    public var jsonValue: Value? {
+        guard let bytes = self.body.bytes else {
+            return nil
+        }
+        
+        return try? Cheetah.JSON.parse(from: bytes)
+    }
+    
     /// Returns a Cheetah JSONArray from a request if the contents are a JSON Array
     public var jsonArray: JSONArray? {
         guard let bytes = self.body.bytes else {

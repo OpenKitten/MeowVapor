@@ -38,7 +38,7 @@ open class SessionsMiddleware<Model: SessionModel>: Middleware {
             session = s
             new = false
         } else {
-            session = try Model(for: request)
+            session = try Model(from: request)
             new = true
         }
         

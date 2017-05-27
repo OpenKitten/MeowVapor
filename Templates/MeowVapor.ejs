@@ -2,6 +2,10 @@
 <%
 
 window.sessionModels = (types.based["SessionModel"] || []);
+window.jsonResponseModels = (types.based["JSONResponseModel"] || []);
+window.jsonErrorModels = (types.based["JSONErrorModel"] || []);
+window.jsonRequestModels = (types.based["JSONRequestModel"] || []);
+window.jsonResponses = jsonResponseModels.concat(jsonErrorModels);
 
 swiftImport("MeowVapor", "Vapor", "HTTP");
 
@@ -19,5 +23,6 @@ forEachSerializable(serializable => sessionModels.includes(serializable) ? inclu
 forEachSerialization(serializable => include('SerializeSessionModel', {serializable}));
 
 forEachDeserialization(serializable => include('DeserializeSessionModel', {serializable}));
-
 -%>
+<%- jsonResponses.forEach(responseModel => include('JSONResponse')); %>
+<%- jsonRequestModels.forEach(requestModel => include('JSONRequest')); %>

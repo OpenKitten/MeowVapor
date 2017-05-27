@@ -125,7 +125,27 @@ public struct BasicJSONRoute<Req: JSONRequestModel, Resp: JSONResponseModel, Err
         }
     }
     
-    public init(method: HTTP.Method = .wildcard, _ path: String..., _ closure: @escaping Closure) {
+    public static func get(_ path: String..., _ closure: @escaping Closure) -> BasicJSONRoute<Req, Resp, Err> {
+        return BasicJSONRoute<Req, Resp, Err>(method: .get, path, closure)
+    }
+    
+    public static func put(_ path: String..., _ closure: @escaping Closure) -> BasicJSONRoute<Req, Resp, Err> {
+        return BasicJSONRoute<Req, Resp, Err>(method: .put, path, closure)
+    }
+    
+    public static func post(_ path: String..., _ closure: @escaping Closure) -> BasicJSONRoute<Req, Resp, Err> {
+        return BasicJSONRoute<Req, Resp, Err>(method: .post, path, closure)
+    }
+    
+    public static func delete(_ path: String..., _ closure: @escaping Closure) -> BasicJSONRoute<Req, Resp, Err> {
+        return BasicJSONRoute<Req, Resp, Err>(method: .delete, path, closure)
+    }
+    
+    public static func all(_ path: String..., _ closure: @escaping Closure) -> BasicJSONRoute<Req, Resp, Err> {
+        return BasicJSONRoute<Req, Resp, Err>(method: .wildcard, path, closure)
+    }
+    
+    public init(method: HTTP.Method = .wildcard, _ path: [String], _ closure: @escaping Closure) {
         self.method = method
         self.path = path
         self.closure = closure

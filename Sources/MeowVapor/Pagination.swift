@@ -165,7 +165,7 @@ extension Model {
                     case "false": value = false
                     default: throw FindError.typeError
                     }
-                case is ObjectId.Type:
+                case is ObjectId.Type, is Identifyable.Type, is GridFS.File.Type:
                     guard let id = try? ObjectId(inputValue) else {
                         throw FindError.typeError
                     }

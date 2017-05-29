@@ -5,6 +5,17 @@ import HTTP
 import MongoKitten
 import BSON
 
+/// Because `let type = type as? Array<Identifyable>.Type` won't work
+fileprivate protocol DirtyHack {
+    static var elementType: Any.Type { get }
+}
+
+extension Array : DirtyHack {
+    static var elementType: Any.Type {
+        return Element.self
+    }
+}
+
 extension Model {
     /// Performs a paginated or unpaginated find on the model, and returns the result.
     /// The API is intended to be public-facing.
@@ -98,8 +109,12 @@ extension Model {
             let op = pieces[1]
             let queryValue = pieces[2..<pieces.endIndex].joined()
             
-            guard let type = fields.first(where: { $0.keyString == key })?.type else {
+            guard var type = fields.first(where: { $0.keyString == key })?.type else {
                 throw FindError.unfilterableField(key)
+            }
+            
+            if let collectionType = type as? DirtyHack.Type {
+                type = collectionType.elementType
             }
             
             switch op {

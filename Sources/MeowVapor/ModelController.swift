@@ -20,6 +20,20 @@ open class ModelController<M : Model & Parameterizable>: ResourceRepresentable {
     /// If you specify the same property in both `privateFields` and `alwaysInclude`, the property will never be included (`privateFields` is more important).
     open var privateFields: Set<M.Key> = []
     
+    /// The properties you include here will never be updated through the API.
+    /// If you provide custom setters, these setters will still be accessible even if the key is included here.
+    open var readonlyFields: Set<M.Key> = []
+    
+    /// You can provide custom setters, that will execute code instead of directly updating the instance through Meow.
+    /// You can use custom keys here, that do not exist as properties in your model, or use the names of properties, in
+    /// which case the property will always be updated using the setter.
+    ///
+    /// Custom setters are executed after the Meow update has finished. This means that if an error is thrown while running
+    /// a custom setter, the other updates will already be finished.
+    ///
+    /// - warning: These setters currently only work for updates - not for store requests.
+    open var customSetters: [String: (M, BSON.Primitive?) throws -> Void] = [:]
+    
     /// The properties you include here will always be included in a request, even if the query parameter `include` does not specify them.
     /// If you specify the same property in both `privateFields` and `alwaysInclude`, the property will never be included (`privateFields` is more important).
     open var alwaysInclude: Set<M.Key> = []
@@ -67,6 +81,19 @@ open class ModelController<M : Model & Parameterizable>: ResourceRepresentable {
         }
         
         document = try makeModelDocument(from: document, for: request)
+        
+        var setters: [() throws -> ()] = []
+        for (key, setter) in customSetters {
+            guard let newValue = document[key] else {
+                continue
+            }
+            
+            setters.append {
+                try setter(instance, newValue)
+            }
+            
+            document[key] = nil
+        }
         
         try instance.update(with: document)
         
@@ -116,8 +143,11 @@ open class ModelController<M : Model & Parameterizable>: ResourceRepresentable {
             document[field.keyString] = nil
         }
         
+        // TODO: FIX BSON!
+        document = Document(data: document.bytes)
+        
         for key in M.Key.all where key.type is BaseModel.Type {
-            guard let id = ObjectId(document[key.keyString]["$id"]) else {
+            guard let id = ObjectId(document[key.keyString]) else {
                 continue
             }
             
@@ -146,16 +176,18 @@ open class ModelController<M : Model & Parameterizable>: ResourceRepresentable {
     open func makeModelDocument(from input: Document, for request: Request) throws -> Document {
         var document = input
         
-        for field in privateFields {
+        for field in privateFields.union(readonlyFields) {
             document[field.keyString] = nil
         }
         
+        // references
         for key in M.Key.all {
-            guard let type = key.type as? BaseModel.Type, let id = ObjectId(document[key.keyString]) else {
+            guard let id = ObjectId(document[key.keyString]) else {
                 continue
             }
             
-            document[key.keyString] = DBRef(referencing: id, inCollection: type.collection)
+            // TODO: Validate references
+            document[key.keyString] = id
         }
         
         return document

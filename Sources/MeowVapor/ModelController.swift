@@ -143,9 +143,6 @@ open class ModelController<M : Model & Parameterizable>: ResourceRepresentable {
             document[field.keyString] = nil
         }
         
-        // TODO: FIX BSON!
-        document = Document(data: document.bytes)
-        
         for key in M.Key.all where key.type is BaseModel.Type {
             guard let id = ObjectId(document[key.keyString]) else {
                 continue

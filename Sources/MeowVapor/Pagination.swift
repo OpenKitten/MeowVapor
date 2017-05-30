@@ -95,7 +95,7 @@ extension Model {
     }
     
     private static func parseFilterString(_ spec: String, fields: Set<Self.Key>) throws -> Query {
-        var filterDocument = Document()
+        var filterQuery = Query.init()
         
         // Filter conditions are separated by commas, so we'll split them and loop through them
         for condition in spec.components(separatedBy: ",") where !condition.isEmpty {
@@ -123,7 +123,7 @@ extension Model {
                 guard unquotedInput.characters.removeFirst() == "'" && unquotedInput.characters.removeLast() == "'" else {
                     throw FindError.unquotedString
                 }
-                filterDocument[key] = BSON.RegularExpression(pattern: Foundation.NSRegularExpression.escapedPattern(for: unquotedInput), options: .caseInsensitive)
+                filterQuery = filterQuery && Query([key: BSON.RegularExpression(pattern: Foundation.NSRegularExpression.escapedPattern(for: unquotedInput), options: .caseInsensitive)])
             default:
                 // A 1:1 mapping from our operators to MongoDB operators
                 let availableOperators = [
@@ -190,11 +190,11 @@ extension Model {
                     continue
                 }
                 
-                filterDocument[key] = ["$\(filterOperator)": value]
+                filterQuery = filterQuery && Query([key: ["$\(filterOperator)": value] as Document])
             }
         }
         
-        return Query(filterDocument)
+        return filterQuery
     }
 }
 

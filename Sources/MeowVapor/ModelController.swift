@@ -1,3 +1,4 @@
+import Foundation
 import Meow
 import Vapor
 
@@ -177,14 +178,15 @@ open class ModelController<M : Model & Parameterizable>: ResourceRepresentable {
             document[field.keyString] = nil
         }
         
-        // references
+        // references and null support
         for key in M.Key.all {
-            guard let id = ObjectId(document[key.keyString]) else {
-                continue
+            let value = document[key.keyString]
+            if let id = ObjectId(value) {
+                // TODO: Validate references
+                document[key.keyString] = id
+            } else if value === NSNull() {
+                document[key.keyString] = nil
             }
-            
-            // TODO: Validate references
-            document[key.keyString] = id
         }
         
         return document

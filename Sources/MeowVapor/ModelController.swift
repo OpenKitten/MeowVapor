@@ -2,28 +2,52 @@ import Foundation
 import Meow
 import Vapor
 
+fileprivate func keyPathSet<B, T>(on instance: B, path: WritableKeyPath<B, T>, value: Any?) throws {
+    var instance = instance
+    switch value {
+    case let value as T:
+        instance[keyPath: path] = value
+    default:
+        throw Meow.Error.invalidValue(key: String(describing: path), reason: "Value \(value ?? "nil") is not of type \(T.self)")
+    }
+}
+
+fileprivate func keyPathSet<B, T>(on instance: B, path: WritableKeyPath<B, T?>, value: Any?) throws {
+    var instance = instance
+    switch value {
+    case let value as T:
+        instance[keyPath: path] = value
+    case is NSNull:
+        instance[keyPath: path] = nil
+    default:
+        throw Meow.Error.invalidValue(key: String(describing: path), reason: "Value \(value ?? "nil") is not of type \(T.self)")
+    }
+}
+
 open class ModelController<M : Model & Parameterizable>: ResourceRepresentable {
+    
+    public typealias Key = String
     
     public init() {}
     
     /// The fields that are available for filtering. A MongoDB query may be generated based on the request for these properties.
-    open var filterFields: Set<M.Key> = []
+    open var filterFields: [Key: Any.Type] = [:]
     
     /// The fields that are available for filtering. A MongoDB sort operation may be generated based on the request for these properties.
-    open var sortFields: Set<M.Key> = []
+    open var sortFields: Set<Key> = []
     
     /// Set this closure to allow for implicit/default values.
     ///
     /// It is used with `store` requests. You can use this closure to infer certain values from the request.
-    open var makeImplicitValues: ((Request) throws -> M.Values)?
+    open var makeImplicitValues: ((Request) throws -> Document)?
     
     /// The properties you include here will never be included by the default implementation of `makeApiView`.
     /// If you specify the same property in both `privateFields` and `alwaysInclude`, the property will never be included (`privateFields` is more important).
-    open var privateFields: Set<M.Key> = []
+    open var privateFields: Set<Key> = []
     
     /// The properties you include here will never be updated through the API.
     /// If you provide custom setters, these setters will still be accessible even if the key is included here.
-    open var readonlyFields: Set<M.Key> = []
+    open var readonlyFields: Set<Key> = []
     
     /// You can provide custom setters, that will execute code instead of directly updating the instance through Meow.
     /// You can use custom keys here, that do not exist as properties in your model, or use the names of properties, in
@@ -37,9 +61,77 @@ open class ModelController<M : Model & Parameterizable>: ResourceRepresentable {
     
     /// The properties you include here will always be included in a request, even if the query parameter `include` does not specify them.
     /// If you specify the same property in both `privateFields` and `alwaysInclude`, the property will never be included (`privateFields` is more important).
-    open var alwaysInclude: Set<M.Key> = []
+    open var alwaysInclude: Set<String> = []
     
-    open func formatPagination(_ result: M.PaginatedFindResult, for request: Request) throws -> ResponseRepresentable {
+    open var keyPaths: [String : AnyKeyPath] = [:]
+    
+    // MARK: - Updates
+    
+    public enum UpdateError : Error {
+        case invalidKey
+    }
+    
+    func update(instance: M, with document: Document) throws {
+        var instance = instance
+        var updaters = [() throws -> ()]()
+        
+        for (key, value) in document {
+            guard let path = keyPaths[key] else {
+                throw UpdateError.invalidKey
+            }
+            
+            updaters.append {
+                // TODO: Find something better than this.
+                switch path {
+                case let path as WritableKeyPath<M, String>:
+                    try keyPathSet(on: instance, path: path, value: value)
+                case let path as WritableKeyPath<M, String?>:
+                    try keyPathSet(on: instance, path: path, value: value)
+                case let path as WritableKeyPath<M, Int>:
+                    try keyPathSet(on: instance, path: path, value: value)
+                case let path as WritableKeyPath<M, Int?>:
+                    try keyPathSet(on: instance, path: path, value: value)
+                case let path as WritableKeyPath<M, Int32>:
+                    try keyPathSet(on: instance, path: path, value: value)
+                case let path as WritableKeyPath<M, Int32?>:
+                    try keyPathSet(on: instance, path: path, value: value)
+                case let path as WritableKeyPath<M, Double>:
+                    try keyPathSet(on: instance, path: path, value: value)
+                case let path as WritableKeyPath<M, Double?>:
+                    try keyPathSet(on: instance, path: path, value: value)
+                case let path as WritableKeyPath<M, ObjectId>:
+                    try keyPathSet(on: instance, path: path, value: value)
+                case let path as WritableKeyPath<M, ObjectId?>:
+                    try keyPathSet(on: instance, path: path, value: value)
+                case let path as WritableKeyPath<M, Bool>:
+                    try keyPathSet(on: instance, path: path, value: value)
+                case let path as WritableKeyPath<M, Bool?>:
+                    try keyPathSet(on: instance, path: path, value: value)
+                case let path as WritableKeyPath<M, BSON.RegularExpression>:
+                    try keyPathSet(on: instance, path: path, value: value)
+                case let path as WritableKeyPath<M, BSON.RegularExpression?>:
+                    try keyPathSet(on: instance, path: path, value: value)
+                case let path as WritableKeyPath<M, BSON.Binary>:
+                    try keyPathSet(on: instance, path: path, value: value)
+                case let path as WritableKeyPath<M, BSON.Binary?>:
+                    try keyPathSet(on: instance, path: path, value: value)
+                case let path as WritableKeyPath<M, Date>:
+                    try keyPathSet(on: instance, path: path, value: value)
+                case let path as WritableKeyPath<M, Date?>:
+                    try keyPathSet(on: instance, path: path, value: value)
+                case let path as WritableKeyPath<M, Document>:
+                    try keyPathSet(on: instance, path: path, value: value)
+                case let path as WritableKeyPath<M, Document?>:
+                    try keyPathSet(on: instance, path: path, value: value)
+                default:
+                    throw Meow.Error.invalidValue(key: String(describing: path), reason: "Unsupported type \(type(of: path).valueType)")
+                }
+            }
+        }
+    }
+    
+    public typealias PaginatedFindResult = (total: Int, perPage: Int, currentPage: Int, lastPage: Int, from: Int, to: Int, data: AnySequence<M>)
+    open func formatPagination(_ result: PaginatedFindResult, for request: Request) throws -> ResponseRepresentable {
         return try [
             "total": result.total,
             "per_page": result.perPage,
@@ -96,7 +188,10 @@ open class ModelController<M : Model & Parameterizable>: ResourceRepresentable {
             document[key] = nil
         }
         
-        try instance.update(with: document)
+        try self.update(instance: instance, with: document)
+        for setter in setters {
+            try setter()
+        }
         
         return Response(status: .noContent)
     }
@@ -122,12 +217,13 @@ open class ModelController<M : Model & Parameterizable>: ResourceRepresentable {
         document = try makeModelDocument(from: document, for: request)
         
         if let append = try makeImplicitValues?(request) {
-            document += append.serialize()
+            document += append
         }
         
-        try M.validateUpdate(with: document)
+        let decoder = M.decoder
+        let model = try decoder.decode(M.self, from: document)
         
-        let model = try M(newFrom: document)
+        try model.save()
         
         return ["_id": model._id] as Document
     }
@@ -138,18 +234,10 @@ open class ModelController<M : Model & Parameterizable>: ResourceRepresentable {
     }
     
     open func serialize(from instance: M, for request: Request) throws -> Document {
-        var document = instance.serialize() as Document
+        var document = try M.encoder.encode(instance)
         
         for field in privateFields {
-            document[field.keyString] = nil
-        }
-        
-        for key in M.Key.all where key.type is BaseModel.Type {
-            guard let id = ObjectId(document[key.keyString]) else {
-                continue
-            }
-            
-            document[key.keyString] = id
+            document[field] = nil
         }
         
         return document
@@ -159,7 +247,7 @@ open class ModelController<M : Model & Parameterizable>: ResourceRepresentable {
         var document = view
         
         if var included = parseIncludeParameter(request.query?["include"]?.string ?? "") {
-            included.formUnion(alwaysInclude.map { $0.keyString })
+            included.formUnion(alwaysInclude.map { $0 })
             
             for key in document.keys {
                 if !included.contains(key) {
@@ -175,18 +263,7 @@ open class ModelController<M : Model & Parameterizable>: ResourceRepresentable {
         var document = input
         
         for field in privateFields.union(readonlyFields) {
-            document[field.keyString] = nil
-        }
-        
-        // references and null support
-        for key in M.Key.all {
-            let value = document[key.keyString]
-            if let id = ObjectId(value) {
-                // TODO: Validate references
-                document[key.keyString] = id
-            } else if value === NSNull() {
-                document[key.keyString] = nil
-            }
+            document[field] = nil
         }
         
         return document

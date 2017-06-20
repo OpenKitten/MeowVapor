@@ -4,17 +4,19 @@ import MongoKitten
 import HTTP
 import Vapor
 
-extension GridFS.File : ResponseRepresentable {
+extension FileReference : ResponseRepresentable {
     /// Returns a GridFS file as a response
     public func makeResponse() throws -> Response {
         var headers: [HeaderKey: String] = [:]
         
-        if let type = self.contentType {
+        let file = try self.resolve()
+        
+        if let type = file.contentType {
             headers["Content-Type"] = type
         }
         
         return Response(status: .ok, headers: headers) { stream in
-            for chunk in self {
+            for chunk in file {
                 try stream.write(chunk.data)
             }
             
@@ -22,14 +24,12 @@ extension GridFS.File : ResponseRepresentable {
         }
     }
     
-    public static func from(_ request: Request, named formName: String = "file", allowing contentTypes: [String]? = nil) throws -> GridFS.File {
+    public init(storingFileFrom request: Request, named formName: String = "file", allowing contentTypes: [String]? = nil) throws {
         let file = try request.getFile(allowing: contentTypes, formName: formName)
         
-        let id = try Meow.fs.store(data: file.data,
-                                   named: file.name,
-                                   withType: file.contentType)
-        
-        return try GridFS.File.restore(id, key: "file from request")
+        reference = try Meow.fs.store(data: file.data,
+                               named: file.name,
+                               withType: file.contentType)
     }
 }
 
@@ -72,7 +72,7 @@ extension Request {
 
 }
 
-public extension Optional where Wrapped == GridFS.File {
+public extension Optional where Wrapped == FileReference {
     public func makeResponse() throws -> Response {
         guard let wrapped = self else {
             throw Abort.notFound

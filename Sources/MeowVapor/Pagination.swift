@@ -39,8 +39,8 @@ extension Model {
     public static func paginatedFind(
         for request: Request,
         baseQuery: MongoKitten.Query = Query(Document()),
-        allowFiltering filterFields: Set<Self.Key> = [],
-        allowSorting sortFields: Set<Self.Key> = [],
+        allowFiltering filterFields: [String: Any.Type] = [:],
+        allowSorting sortFields: Set<String> = [],
         maximumPerPage: Int? = 1000
         ) throws -> (result: PaginatedFindResult, usedPagination: Bool) {
         
@@ -65,8 +65,8 @@ extension Model {
         return (result: result, usedPagination: specifiedPage != nil)
     }
     
-    private static func parseSortString(_ spec: String, fields: Set<Self.Key>) throws -> [Key : SortOrder]? {
-        var sortSpecification = [Key : SortOrder]()
+    private static func parseSortString(_ spec: String, fields: Set<String>) throws -> Sort? {
+        var sortSpecification = Sort()
         
         for sort in spec.components(separatedBy: ",") where !sort.isEmpty {
             let pieces = sort.components(separatedBy: "|")
@@ -75,7 +75,7 @@ extension Model {
                 continue
             }
             
-            guard let key = fields.first(where: { $0.keyString == pieces[0] }) else {
+            guard let key = fields.first(where: { $0 == pieces[0] }) else {
                 throw FindError.unsortableField(pieces[0])
             }
             
@@ -91,10 +91,10 @@ extension Model {
             }
         }
         
-        return sortSpecification.count > 0 ? sortSpecification : nil
+        return sortSpecification.makeDocument().count > 0 ? sortSpecification : nil
     }
     
-    private static func parseFilterString(_ spec: String, fields: Set<Self.Key>) throws -> Query {
+    private static func parseFilterString(_ spec: String, fields: [String: Any.Type]) throws -> Query {
         var filterQuery = Query.init()
         
         // Filter conditions are separated by commas, so we'll split them and loop through them
@@ -109,7 +109,7 @@ extension Model {
             let op = pieces[1]
             let queryValue = pieces[2..<pieces.endIndex].joined()
             
-            guard var type = fields.first(where: { $0.keyString == key })?.type else {
+            guard var type = fields[key] else {
                 throw FindError.unfilterableField(key)
             }
             
@@ -180,7 +180,7 @@ extension Model {
                     case "false": value = false
                     default: throw FindError.typeError
                     }
-                case is ObjectId.Type, is Identifyable.Type, is GridFS.File.Type:
+                case is ObjectId.Type, is Referencing.Type:
                     guard let id = try? ObjectId(inputValue) else {
                         throw FindError.typeError
                     }

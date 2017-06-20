@@ -109,13 +109,14 @@ public struct BasicJSONRoute<Req: JSONRequestModel, Resp: JSONResponseModel, Err
         return BasicResponder { httpRequest in
             do {
                 guard let request = try Request(from: httpRequest) else {
-                    guard let error = try Error(from: httpRequest) else {
+                    // FIXME: Commented out because `Err` does not have an initializer
+//                    guard let error = try Error(from: httpRequest) else {
                         throw BasicJSONError([
                             "erorr": "Unknown"
                         ])
-                    }
+//                    }
                     
-                    return try error.makeResponse()
+//                    return try error.makeResponse()
                 }
                 
                 return try self.closure(request).makeResponse()

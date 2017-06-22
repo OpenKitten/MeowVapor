@@ -68,16 +68,16 @@ open class ModelController<M : Model & Parameterizable>: ResourceRepresentable {
     // MARK: - Updates
     
     public enum UpdateError : Error {
-        case invalidKey
+        case invalidKey(String)
     }
     
     func update(instance: M, with document: Document) throws {
         var instance = instance
         var updaters = [() throws -> ()]()
         
-        for (key, value) in document {
+        for (key, value) in document.flattened(skippingArrays: true) {
             guard let path = keyPaths[key] else {
-                throw UpdateError.invalidKey
+                throw UpdateError.invalidKey(key)
             }
             
             updaters.append {
@@ -128,6 +128,8 @@ open class ModelController<M : Model & Parameterizable>: ResourceRepresentable {
                 }
             }
         }
+        
+        try updaters.forEach { try $0() }
     }
     
     public typealias PaginatedFindResult = (total: Int, perPage: Int, currentPage: Int, lastPage: Int, from: Int, to: Int, data: AnySequence<M>)

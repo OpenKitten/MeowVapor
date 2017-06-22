@@ -16,6 +16,12 @@ extension Array : DirtyHack {
     }
 }
 
+extension Optional : DirtyHack {
+    static var elementType: Any.Type {
+        return Wrapped.self
+    }
+}
+
 extension Model {
     /// Performs a paginated or unpaginated find on the model, and returns the result.
     /// The API is intended to be public-facing.
@@ -113,6 +119,11 @@ extension Model {
                 throw FindError.unfilterableField(key)
             }
             
+            // yes, two times
+            if let collectionType = type as? DirtyHack.Type {
+                type = collectionType.elementType
+            }
+            
             if let collectionType = type as? DirtyHack.Type {
                 type = collectionType.elementType
             }
@@ -187,7 +198,7 @@ extension Model {
                     
                     value = id
                 default:
-                    continue
+                    throw FindError.filterTypeError(field: key, type: type, model: Self.self)
                 }
                 
                 filterQuery = filterQuery && Query([key: ["$\(filterOperator)": value] as Document])
@@ -204,6 +215,7 @@ public enum FindError: Error {
     case invalidOperator(String)
     case unfilterableField(String)
     case unsortableField(String)
+    case filterTypeError(field: String, type: Any.Type, model: Any.Type)
 }
 
 extension FindError: Vapor.Debuggable {
@@ -214,6 +226,7 @@ extension FindError: Vapor.Debuggable {
         case .invalidOperator(let op): return "The operator \(op) is not valid in the given context"
         case .unfilterableField(let field): return "The field '\(field)' is not filterable"
         case .unsortableField(let field): return "The field '\(field)' is not sortable"
+        case .filterTypeError(let field, let type, let model): return "A filter query cannot be generated for type of the field \(field) on \(model), because the type \(type) is unsupported"
         }
     }
     

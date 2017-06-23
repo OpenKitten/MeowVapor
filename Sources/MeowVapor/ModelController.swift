@@ -7,24 +7,29 @@ fileprivate func keyPathSet<B, T>(on instance: B, path: WritableKeyPath<B, T>, v
     switch value {
     case let value as T:
         instance[keyPath: path] = value
+    case let value as Int where T.self is Double.Type:
+        instance[keyPath: path] = Double(value) as! T
     default:
         throw Meow.Error.invalidValue(key: String(describing: path), reason: "Value \(value ?? "nil") is not of type \(T.self)")
     }
 }
 
-fileprivate func keyPathSet<B, T>(on instance: B, path: WritableKeyPath<B, T?>, value: Any?) throws {
-    var instance = instance
-    switch value {
-    case let value as T:
-        instance[keyPath: path] = value
-    case is NSNull:
-        instance[keyPath: path] = nil
-    default:
-        throw Meow.Error.invalidValue(key: String(describing: path), reason: "Value \(value ?? "nil") is not of type \(T.self)")
-    }
-}
+//fileprivate func keyPathSet<B, T>(on instance: B, path: WritableKeyPath<B, T?>, value: Any?) throws {
+//    var instance = instance
+//    switch value {
+//    case let value as T:
+//        instance[keyPath: path] = value
+//    case is NSNull:
+//        instance[keyPath: path] = nil
+//    default:
+//        throw Meow.Error.invalidValue(key: String(describing: path), reason: "Value \(value ?? "nil") is not of optoinal type \(T.self)")
+//    }
+//}
 
 open class ModelController<M : Model & Parameterizable>: ResourceRepresentable {
+    
+    /// If set to true (the default), updates on variables will be handled incrementally
+    open var flattenBeforeUpdate = true
     
     public typealias Key = String
     
@@ -75,7 +80,7 @@ open class ModelController<M : Model & Parameterizable>: ResourceRepresentable {
         var instance = instance
         var updaters = [() throws -> ()]()
         
-        for (key, value) in document.flattened(skippingArrays: true) {
+        for (key, value) in document {
             guard let path = keyPaths[key] else {
                 throw UpdateError.invalidKey(key)
             }
@@ -171,7 +176,7 @@ open class ModelController<M : Model & Parameterizable>: ResourceRepresentable {
     }
     
     open func update(request: Request, instance: M) throws -> ResponseRepresentable {
-        guard var document = request.document else {
+        guard var document = flattenBeforeUpdate ? request.document?.flattened(skippingArrays: true) : request.document else {
             throw Abort.badRequest
         }
         
@@ -194,6 +199,8 @@ open class ModelController<M : Model & Parameterizable>: ResourceRepresentable {
         for setter in setters {
             try setter()
         }
+        
+        try instance.save()
         
         return Response(status: .noContent)
     }

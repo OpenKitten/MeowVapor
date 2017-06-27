@@ -2,32 +2,6 @@ import Foundation
 import Meow
 import Vapor
 
-fileprivate func keyPathSet<B, T>(on instance: B, path: WritableKeyPath<B, T>, value: Any?) throws {
-    var instance = instance
-    switch value {
-    case let value as T:
-        instance[keyPath: path] = value
-    case let value as Int where T.self is Double.Type:
-        instance[keyPath: path] = Double(value) as! T
-    default:
-        throw Meow.Error.invalidValue(key: String(describing: path), reason: "Value \(value ?? "nil") is not of type \(T.self)")
-    }
-}
-
-fileprivate func keyPathSet<B, T>(on instance: B, path: WritableKeyPath<B, T?>, value: Any?) throws {
-    var instance = instance
-    switch value {
-    case let value as T:
-        instance[keyPath: path] = value
-    case let value as Int where T.self is Double.Type:
-        instance[keyPath: path] = Double(value) as? T
-    case is NSNull:
-        instance[keyPath: path] = nil
-    default:
-        throw Meow.Error.invalidValue(key: String(describing: path), reason: "Value \(value ?? "nil") is not of optoinal type \(T.self)")
-    }
-}
-
 public typealias MeowVaporModel = Model & Parameterizable & KeyPathListable
 
 open class ModelController<M : MeowVaporModel>: ResourceRepresentable {

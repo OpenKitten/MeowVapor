@@ -28,7 +28,9 @@ fileprivate func keyPathSet<B, T>(on instance: B, path: WritableKeyPath<B, T?>, 
     }
 }
 
-open class ModelController<M : Model & Parameterizable>: ResourceRepresentable {
+public typealias MeowVaporModel = Model & Parameterizable & KeyPathListable
+
+open class ModelController<M : MeowVaporModel>: ResourceRepresentable {
     
     /// If set to true (the default), updates on variables will be handled incrementally
     open var flattenBeforeUpdate = true
@@ -80,63 +82,8 @@ open class ModelController<M : Model & Parameterizable>: ResourceRepresentable {
     
     func update(instance: M, with document: Document) throws {
         var instance = instance
-        var updaters = [() throws -> ()]()
-        
-        for (key, value) in document {
-            guard let path = keyPaths[key] else {
-                throw UpdateError.invalidKey(key)
-            }
             
-            updaters.append {
-                // TODO: Find something better than this.
-                switch path {
-                case let path as WritableKeyPath<M, String>:
-                    try keyPathSet(on: instance, path: path, value: value)
-                case let path as WritableKeyPath<M, String?>:
-                    try keyPathSet(on: instance, path: path, value: value)
-                case let path as WritableKeyPath<M, Int>:
-                    try keyPathSet(on: instance, path: path, value: value)
-                case let path as WritableKeyPath<M, Int?>:
-                    try keyPathSet(on: instance, path: path, value: value)
-                case let path as WritableKeyPath<M, Int32>:
-                    try keyPathSet(on: instance, path: path, value: value)
-                case let path as WritableKeyPath<M, Int32?>:
-                    try keyPathSet(on: instance, path: path, value: value)
-                case let path as WritableKeyPath<M, Double>:
-                    try keyPathSet(on: instance, path: path, value: value)
-                case let path as WritableKeyPath<M, Double?>:
-                    try keyPathSet(on: instance, path: path, value: value)
-                case let path as WritableKeyPath<M, ObjectId>:
-                    try keyPathSet(on: instance, path: path, value: value)
-                case let path as WritableKeyPath<M, ObjectId?>:
-                    try keyPathSet(on: instance, path: path, value: value)
-                case let path as WritableKeyPath<M, Bool>:
-                    try keyPathSet(on: instance, path: path, value: value)
-                case let path as WritableKeyPath<M, Bool?>:
-                    try keyPathSet(on: instance, path: path, value: value)
-                case let path as WritableKeyPath<M, BSON.RegularExpression>:
-                    try keyPathSet(on: instance, path: path, value: value)
-                case let path as WritableKeyPath<M, BSON.RegularExpression?>:
-                    try keyPathSet(on: instance, path: path, value: value)
-                case let path as WritableKeyPath<M, BSON.Binary>:
-                    try keyPathSet(on: instance, path: path, value: value)
-                case let path as WritableKeyPath<M, BSON.Binary?>:
-                    try keyPathSet(on: instance, path: path, value: value)
-                case let path as WritableKeyPath<M, Date>:
-                    try keyPathSet(on: instance, path: path, value: value)
-                case let path as WritableKeyPath<M, Date?>:
-                    try keyPathSet(on: instance, path: path, value: value)
-                case let path as WritableKeyPath<M, Document>:
-                    try keyPathSet(on: instance, path: path, value: value)
-                case let path as WritableKeyPath<M, Document?>:
-                    try keyPathSet(on: instance, path: path, value: value)
-                default:
-                    throw Meow.Error.invalidValue(key: String(describing: path), reason: "Unsupported type \(type(of: path).valueType)")
-                }
-            }
-        }
-        
-        try updaters.forEach { try $0() }
+        try instance.update(with: document)
     }
     
     public typealias PaginatedFindResult = (total: Int, perPage: Int, currentPage: Int, lastPage: Int, from: Int, to: Int, data: AnySequence<M>)
@@ -296,7 +243,7 @@ open class ModelController<M : Model & Parameterizable>: ResourceRepresentable {
     
 }
 
-open class ClosureBasedAccessControlModelController<M : Model & Parameterizable> : ModelController<M> {
+open class ClosureBasedAccessControlModelController<M : MeowVaporModel> : ModelController<M> {
     
     public typealias MultipleAccessChecker = (Request) throws -> Void
     public typealias SingleAccessChecker = (Request, M) throws -> Void

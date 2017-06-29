@@ -89,10 +89,14 @@ open class ModelController<M : MeowVaporModel>: ResourceRepresentable {
     }
     
     open func show(request: Request, instance: M) throws -> ResponseRepresentable {
+        try accessCheck(instance: instance, request: request)
+        
         return try makeApiView(from: instance, for: request)
     }
     
     open func destroy(request: Request, instance: M) throws -> ResponseRepresentable {
+        try accessCheck(instance: instance, request: request)
+        
         try instance.delete()
         
         return Response(status: .noContent)
@@ -102,6 +106,8 @@ open class ModelController<M : MeowVaporModel>: ResourceRepresentable {
         guard var document = flattenBeforeUpdate ? request.document?.flattened(skippingArrays: true) : request.document else {
             throw Abort.badRequest
         }
+        
+        try accessCheck(instance: instance, request: request)
         
         document = try makeModelDocument(from: document, for: request)
         
@@ -213,6 +219,10 @@ open class ModelController<M : MeowVaporModel>: ResourceRepresentable {
         }
         
         return Set(parts + ["_id"])
+    }
+    
+    open func accessCheck(instance: M, request: Request) throws {
+        // Default implementation does nothing
     }
     
 }

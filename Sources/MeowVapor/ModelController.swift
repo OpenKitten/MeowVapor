@@ -200,7 +200,7 @@ open class ModelController<M : MeowVaporModel>: ResourceRepresentable {
     open func makeModelDocument(from input: Document, for request: Request) throws -> Document {
         var document = input
         
-        for field in privateFields.union(readonlyFields) {
+        for field in privateFields.union(readonlyFields).subtracting(customSetters.keys) {
             document[field] = nil
         }
         

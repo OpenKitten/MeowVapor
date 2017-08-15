@@ -71,7 +71,7 @@ extension Model {
         return (result: result, usedPagination: specifiedPage != nil)
     }
     
-    private static func parseSortString(_ spec: String, fields: Set<String>) throws -> Sort? {
+    public static func parseSortString(_ spec: String, fields: Set<String>) throws -> Sort? {
         var sortSpecification = Sort()
         
         for sort in spec.components(separatedBy: ",") where !sort.isEmpty {
@@ -100,7 +100,7 @@ extension Model {
         return sortSpecification.makeDocument().count > 0 ? sortSpecification : nil
     }
     
-    private static func parseFilterString(_ spec: String, fields: [String: Any.Type]) throws -> Query {
+    public static func parseFilterString(_ spec: String, fields: [String: Any.Type]) throws -> Query {
         var filterQuery = Query.init()
         
         // Filter conditions are separated by commas, so we'll split them and loop through them

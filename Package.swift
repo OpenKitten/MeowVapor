@@ -1,12 +1,27 @@
+// swift-tools-version:4.0
+// The swift-tools-version declares the minimum version of Swift required to build this package.
 import PackageDescription
 
 let package = Package(
     name: "MeowVapor",
-    targets: [
-        Target(name: "MeowVapor")
-    ],
+    products: [
+        // Products define the executables and libraries produced by a package, and make them visible to other packages.
+        .library(
+            name: "MeowVapor",
+            targets: ["MeowVapor"]),
+        ],
     dependencies: [
-        .Package(url: "https://github.com/OpenKitten/Meow.git", majorVersion: 0),
-        .Package(url: "https://github.com/vapor/vapor.git", majorVersion: 2)
-    ]
+        .package(url: "https://github.com/OpenKitten/Meow.git", .revision("758303b4a7e932318a08bac98463858781e5b663")),
+        .package(url: "https://github.com/vapor/vapor.git", .exact("2.2.0"))
+    ],
+    targets: [
+        // Targets are the basic building blocks of a package. A target can define a module or a test suite.
+        // Targets can depend on other targets in this package, and on products in packages which this package depends on.
+        .target(
+            name: "MeowVapor",
+            dependencies: ["Meow", "Vapor"]),
+        .testTarget(
+            name: "MeowVaporTests",
+            dependencies: ["MeowVapor"]),
+        ]
 )

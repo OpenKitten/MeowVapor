@@ -126,23 +126,23 @@ public struct BasicJSONRoute<Req: JSONRequestModel, Resp: JSONResponseModel, Err
         }
     }
     
-    public static func get(_ path: String..., _ closure: @escaping Closure) -> BasicJSONRoute<Req, Resp, Err> {
+    public static func get(_ path: String..., closure: @escaping Closure) -> BasicJSONRoute<Req, Resp, Err> {
         return BasicJSONRoute<Req, Resp, Err>(method: .get, path, closure)
     }
     
-    public static func put(_ path: String..., _ closure: @escaping Closure) -> BasicJSONRoute<Req, Resp, Err> {
+    public static func put(_ path: String..., closure: @escaping Closure) -> BasicJSONRoute<Req, Resp, Err> {
         return BasicJSONRoute<Req, Resp, Err>(method: .put, path, closure)
     }
     
-    public static func post(_ path: String..., _ closure: @escaping Closure) -> BasicJSONRoute<Req, Resp, Err> {
+    public static func post(_ path: String..., closure: @escaping Closure) -> BasicJSONRoute<Req, Resp, Err> {
         return BasicJSONRoute<Req, Resp, Err>(method: .post, path, closure)
     }
     
-    public static func delete(_ path: String..., _ closure: @escaping Closure) -> BasicJSONRoute<Req, Resp, Err> {
+    public static func delete(_ path: String..., closure: @escaping Closure) -> BasicJSONRoute<Req, Resp, Err> {
         return BasicJSONRoute<Req, Resp, Err>(method: .delete, path, closure)
     }
     
-    public static func all(_ path: String..., _ closure: @escaping Closure) -> BasicJSONRoute<Req, Resp, Err> {
+    public static func all(_ path: String..., closure: @escaping Closure) -> BasicJSONRoute<Req, Resp, Err> {
         return BasicJSONRoute<Req, Resp, Err>(method: .wildcard, path, closure)
     }
     

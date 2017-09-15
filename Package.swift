@@ -12,6 +12,7 @@ let package = Package(
         ],
     dependencies: [
         .package(url: "https://github.com/OpenKitten/Meow.git", .revision("master/1.0")),
+        .package(url: "https://github.com/OpenKitten/MongoKitten.git", .revision("master/4.1")),
         .package(url: "https://github.com/vapor/vapor.git", from: "2.2.0")
     ],
     targets: [

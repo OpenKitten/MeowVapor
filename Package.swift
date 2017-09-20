@@ -11,8 +11,8 @@ let package = Package(
             targets: ["MeowVapor"]),
         ],
     dependencies: [
-        .package(url: "https://github.com/OpenKitten/Meow.git", .revision("51a8638addc71275876572925e1a94dc8d1a031c")),
-        .package(url: "https://github.com/vapor/vapor.git", from: "2.2.0")
+        .package(url: "https://github.com/OpenKitten/Meow.git", .branch("master/1.0")),
+        .package(url: "https://github.com/vapor/vapor.git", from: "2.0.0")
     ],
     targets: [
         // Targets are the basic building blocks of a package. A target can define a module or a test suite.

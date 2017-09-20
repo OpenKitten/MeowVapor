@@ -54,7 +54,12 @@ open class ModelController<M : MeowVaporModel>: ResourceRepresentable {
         case invalidKey(String)
     }
     
-    func update(instance: M, with document: Document) throws {
+    /// Perform the actual update on the instance with the given document
+    /// This method is used by the update method with request
+    ///
+    /// - parameter instance: The Model instance to update
+    /// - parameter document: The update document, describing the changes
+    open func update(instance: M, with document: Document) throws {
         var instance = instance
             
         try instance.update(with: document)

@@ -11,7 +11,7 @@ let package = Package(
             targets: ["MeowVapor"]),
         ],
     dependencies: [
-        .package(url: "https://github.com/OpenKitten/Meow.git", .branch("master/1.0")),
+        .package(url: "https://github.com/OpenKitten/Meow.git", from: "1.0.0"),
         .package(url: "https://github.com/vapor/vapor.git", from: "2.0.0")
     ],
     targets: [

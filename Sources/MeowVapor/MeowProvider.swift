@@ -3,6 +3,7 @@
 @_exported import MongoKitten
 
 extension Meow.Manager: Service {}
+extension Meow.Context: Service {}
 
 public final class MeowProvider: Provider {
     let connectionSettings: ConnectionSettings
@@ -12,11 +13,17 @@ public final class MeowProvider: Provider {
     }
     
     public func register(_ services: inout Services) throws {
-        let factory = BasicServiceFactory(Meow.Manager.self, supports: []) { container in
+        let managerFactory = BasicServiceFactory(Meow.Manager.self, supports: []) { container in
             return Meow.Manager(settings: self.connectionSettings, eventLoop: container.eventLoop)
         }
         
-        services.register(factory)
+        let contextFactory = BasicServiceFactory(Meow.Context.self, supports: []) { container in
+            let manager = try container.make(Manager.self)
+            return manager.makeContext()
+        }
+        
+        services.register(managerFactory)
+        services.register(contextFactory)
     }
     
     public func didBoot(_ container: Container) throws -> Future<Void> {

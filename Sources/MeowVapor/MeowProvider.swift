@@ -14,7 +14,7 @@ public final class MeowProvider: Provider {
     
     public func register(_ services: inout Services) throws {
         let managerFactory = BasicServiceFactory(Meow.Manager.self, supports: []) { container in
-            return Meow.Manager(settings: self.connectionSettings, eventLoop: container.eventLoop)
+            return try Meow.Manager.make(settings: self.connectionSettings, eventLoop: container.eventLoop).wait()
         }
         
         let contextFactory = BasicServiceFactory(Meow.Context.self, supports: []) { container in

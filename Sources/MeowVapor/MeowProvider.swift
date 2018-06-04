@@ -18,7 +18,15 @@ public final class MeowProvider: Provider {
         }
         
         let contextFactory = BasicServiceFactory(Meow.Context.self, supports: []) { container in
-            let manager = try container.make(Manager.self)
+            let managerContainer: Container
+            // The context manager should be on the super container (so every request has its own context but shares a database connection with other requests)
+            if let subContainer = container as? SubContainer {
+                managerContainer = subContainer.superContainer
+            } else {
+                managerContainer = container
+            }
+            
+            let manager = try managerContainer.make(Manager.self)
             return manager.makeContext()
         }
         
@@ -28,5 +36,17 @@ public final class MeowProvider: Provider {
     
     public func didBoot(_ container: Container) throws -> Future<Void> {
         return .done(on: container)
+    }
+}
+
+public extension Request {
+    public func meow() throws -> Meow.Context {
+        return try self.privateContainer.make(Meow.Context.self)
+    }
+    
+    @available(*, deprecated, message: "Use request.meow() instead of request.make(Context.self) to create a Meow context. Meow contexts should have a lifetime of one request, and making it on the request would allow the context to exceed this lifespan.")
+    public func make(_ type: Meow.Context.Type) throws -> Meow.Context {
+        assertionFailure()
+        return try self.make()
     }
 }

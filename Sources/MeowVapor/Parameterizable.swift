@@ -17,7 +17,7 @@ public extension Model where Self: Parameter, Self.Identifier == ObjectId {
         let id = try ObjectId(parameter)
         let context = try container.make(Meow.Context.self)
         
-        return context.findOne(Self.self, query: "_id" == id).thenThrowing { instance in
+        return context.findOne(Self.self, where: "_id" == id).thenThrowing { instance in
             guard let instance = instance else {
                 throw MeowVaporError.modelInParameterNotFound
             }
@@ -35,7 +35,7 @@ public extension Model where Self: Parameter, Self.Identifier == String {
     static func resolveParameter(_ parameter: String, on container: Container) throws -> EventLoopFuture<Self> {
         let context = try container.make(Meow.Context.self)
         
-        return context.findOne(Self.self, query: "_id" == parameter).thenThrowing { instance in
+        return context.findOne(Self.self, where: "_id" == parameter).thenThrowing { instance in
             guard let instance = instance else {
                 throw MeowVaporError.modelInParameterNotFound
             }

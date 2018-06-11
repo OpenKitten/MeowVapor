@@ -35,6 +35,24 @@ extension ObjectId: ReflectionDecodable {
     }
 }
 
+extension Document: ReflectionDecodable {
+    fileprivate static func leftDecoded() throws -> Document {
+        return ["left": 1]
+    }
+    
+    fileprivate static func rightDecoded() throws -> Document {
+        return ["right": 1]
+    }
+    
+    public static func reflectDecoded() throws -> (Document, Document) {
+        return try (leftDecoded(), rightDecoded())
+    }
+    
+    public static func reflectDecodedIsLeft(_ item: Document) throws -> Bool {
+        return try leftDecoded() == item
+    }
+}
+
 extension Reference: AnyReflectionDecodable where M.Identifier == ObjectId {}
 extension Reference: ReflectionDecodable where M.Identifier == ObjectId {
     private static func leftDecoded() throws -> Reference<M> {

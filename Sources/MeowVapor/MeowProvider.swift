@@ -40,6 +40,7 @@ public final class MeowProvider: Provider {
 }
 
 public extension Request {
+    /// 🐈 Provides a Meow Context for use during this request
     public func meow() throws -> Meow.Context {
         return try self.privateContainer.make(Meow.Context.self)
     }

@@ -56,11 +56,11 @@ extension Document: ReflectionDecodable {
 extension Reference: AnyReflectionDecodable where M.Identifier == ObjectId {}
 extension Reference: ReflectionDecodable where M.Identifier == ObjectId {
     private static func leftDecoded() throws -> Reference<M> {
-        return try Reference(uncheckedTo: ObjectId.leftDecoded())
+        return try Reference(unsafeTo: ObjectId.leftDecoded())
     }
     
     private static func rightDecoded() throws -> Reference<M> {
-        return try Reference(uncheckedTo: ObjectId.rightDecoded())
+        return try Reference(unsafeTo: ObjectId.rightDecoded())
     }
     
     public static func reflectDecoded() throws -> (Reference<M>, Reference<M>) {

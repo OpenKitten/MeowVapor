@@ -26,7 +26,16 @@ public extension Model where Self: Parameter, Self.Identifier == ObjectId {
     public static func resolveParameter(_ parameter: String, on container: Container) throws -> EventLoopFuture<Self> {
         let id = try ObjectId(parameter)
         
-        return try container.make(Future<Meow.Context>.self).flatMap { context in
+        // Meow contexts should be created on the private container of a request, because they are not meant
+        // to be shared cross-request
+        let meowContainer: Container
+        if let request = container as? Request {
+            meowContainer = request.privateContainer
+        } else {
+            meowContainer = container
+        }
+        
+        return try meowContainer.make(Future<Meow.Context>.self).flatMap { context in
             return context.findOne(Self.self, where: "_id" == id).thenThrowing { instance in
                 guard let instance = instance else {
                     throw MeowVaporError.modelInParameterNotFound
@@ -43,8 +52,17 @@ public extension Model where Self: Parameter, Self.Identifier == String {
         return String(describing: Self.self)
     }
     
-    public static func resolveParameter(_ parameter: String, on container: Container) throws -> EventLoopFuture<Self> {        
-        return try container.make(Future<Meow.Context>.self).flatMap { context in
+    public static func resolveParameter(_ parameter: String, on container: Container) throws -> EventLoopFuture<Self> {
+        // Meow contexts should be created on the private container of a request, because they are not meant
+        // to be shared cross-request
+        let meowContainer: Container
+        if let request = container as? Request {
+            meowContainer = request.privateContainer
+        } else {
+            meowContainer = container
+        }
+        
+        return try meowContainer.make(Future<Meow.Context>.self).flatMap { context in
             return context.findOne(Self.self, where: "_id" == parameter).thenThrowing { instance in
                 guard let instance = instance else {
                     throw MeowVaporError.modelInParameterNotFound

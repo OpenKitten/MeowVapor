@@ -8,6 +8,8 @@ MeowVapor bridges [Meow](https://github.com/openkitten/meow) to Vapor and provid
 .package(url: "https://github.com/OpenKitten/MeowVapor.git", from: "2.0.0")
 ```
 
+Add MeowVapor as a dependency via SPM and run `swift package update`.
+
 ## Setting up
 
 Add Meow to your Vapor services. Be sure to change the MongoDB URI to point to your server.
@@ -109,7 +111,3 @@ If a feature is unsupported by Meow, for example when it can't be type-safe, you
 ```swift
 let database: MongoKitten.Database = context.manager.database
 ```
-
-### Installation
-
-Add MeowVapor as a dependency via SPM and run `swift package update`.

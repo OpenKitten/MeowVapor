@@ -111,3 +111,12 @@ If a feature is unsupported by Meow, for example when it can't be type-safe, you
 ```swift
 let database: MongoKitten.Database = context.manager.database
 ```
+
+## ⭐️ Features
+
+- [x] Boilerplate-free
+- [x] So easy it will make you purr, or have your money back!
+- [x] Awesome type-safe and autocompleted queries
+- [x] Support for custom MongoDB queries
+- [x] Easy migrations to a new model version
+- [x] Supports your own types (like structs and enums) and common types (like String, Int and Date) out of the box using Codable

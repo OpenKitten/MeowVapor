@@ -1,3 +1,3 @@
-enum MeowVaporError: Error {
+public enum MeowVaporError: Error {
     case modelInParameterNotFound
 }

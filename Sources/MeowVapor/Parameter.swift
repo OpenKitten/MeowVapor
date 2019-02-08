@@ -24,7 +24,13 @@ public extension Model where Self: Parameter, Self.Identifier == ObjectId {
     }
     
     public static func resolveParameter(_ parameter: String, on container: Container) throws -> EventLoopFuture<Self> {
-        let id = try ObjectId(parameter)
+        let id: ObjectId
+        
+        do {
+            id = try ObjectId(parameter)
+        } catch {
+            throw MeowVaporError.modelInParameterNotFound
+        }
         
         // Meow contexts should be created on the private container of a request, because they are not meant
         // to be shared cross-request

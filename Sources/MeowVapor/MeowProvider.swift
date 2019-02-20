@@ -73,10 +73,4 @@ public extension Request {
     public func meow() -> Future<Meow.Context> {
         return Future.flatMap(on: self) { try self.privateContainer.make(Future<Meow.Context>.self) }
     }
-    
-    @available(*, deprecated, message: "Use request.meow() instead of request.make(Context.self) to create a Meow context. Meow contexts should have a lifetime of one request, and making it on the request would allow the context to exceed this lifespan.")
-    public func make(_ type: Meow.Context.Type) throws -> Meow.Context {
-        assertionFailure()
-        return try self.make()
-    }
 }

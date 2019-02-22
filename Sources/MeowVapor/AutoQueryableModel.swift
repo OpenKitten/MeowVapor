@@ -66,10 +66,3 @@ extension Reference: ReflectionDecodable where M.Identifier == ObjectId {
         return try (leftDecoded(), rightDecoded())
     }
 }
-
-extension Set: ReflectionDecodable, AnyReflectionDecodable where Element: ReflectionDecodable {
-    public static func reflectDecoded() throws -> (Set<Element>, Set<Element>) {
-        let elements = try Element.reflectDecoded()
-        return ([elements.0], [elements.1])
-    }
-}

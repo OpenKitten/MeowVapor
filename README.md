@@ -15,7 +15,7 @@ Add MeowVapor as a dependency via SPM and run `swift package update`.
 Add Meow to your Vapor services. Be sure to change the MongoDB URI to point to your server.
 
 ```swift
-let meow = try MeowProvider("mongodb://ocalhost")
+let meow = try MeowProvider(uri: "mongodb://localhost")
 try services.register(meow)
 ```
 
@@ -23,10 +23,8 @@ try services.register(meow)
 
 ```swift
 router.get { request -> Future<[User]> in
-   return request.meow().flatMap { context in
-      // Start using Meow!
-      return context.find(User.self).getAllResults()
-   }
+   let context = try request.make(Meow.Context.self)
+   return context.find(User.self).getAllResults()
 }
 ```
 

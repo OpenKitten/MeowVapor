@@ -16,12 +16,18 @@ public final class MeowProvider: Provider {
     let connectionSettings: ConnectionSettings
     
     /// Connects to the MongoDB server or cluster located at the URI
+    @available(*, deprecated, message: "A new initializer is introduced which is more explicit and connects lazily to your database. See our raedme for more information.")
+    public convenience init(_ uri: String) throws {
+        try self.init(uri: uri, lazy: false)
+    }
+    
+    /// Connects to the MongoDB server or cluster located at the URI
     ///
     /// If `lazy` is set to true, the first error Meow throws will occur on the first query, not when creating the database, manager or context.
     /// The advantage of using `lazy` is the ability to call `request.make(Meow.Context.self)` and `request.make(Meow.Manager.self)`
     ///
     /// For backwards compatibility and predictability, lazy defaults to `false`
-    public init(_ uri: String, lazy: Bool = false) throws {
+    public init(uri: String, lazy: Bool = true) throws {
         self.connectionSettings = try ConnectionSettings(uri)
         self.lazy = lazy
     }

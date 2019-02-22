@@ -76,7 +76,14 @@ public final class MeowProvider: Provider {
 
 public extension Request {
     /// 🐈 Provides a Meow Context for use during this request
+    @available(*, deprecated, message: "The recommended way of using Meow with Vapor Requests is now to use a lazily connecting database with Request.context(), which does not return a future.")
     public func meow() -> Future<Meow.Context> {
         return Future.flatMap(on: self) { try self.privateContainer.make(Future<Meow.Context>.self) }
+    }
+    
+    /// 🐈 Provides a Meow Context for use during this request
+    /// The context is made on the `privateContainer` of the request. This means that each request gets its own Context.
+    public func context() throws -> Meow.Context {
+        return try self.privateContainer.make()
     }
 }

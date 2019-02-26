@@ -15,7 +15,7 @@ Add MeowVapor as a dependency via SPM and run `swift package update`.
 Add Meow to your Vapor services. Be sure to change the MongoDB URI to point to your server.
 
 ```swift
-let meow = try MeowProvider(uri: "mongodb://localhost")
+let meow = try MeowProvider(uri: "mongodb://localhost/MyDatabase")
 try services.register(meow)
 ```
 

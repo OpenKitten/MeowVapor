@@ -41,7 +41,14 @@ public extension Model where Self: Parameter, Self.Identifier == ObjectId {
             meowContainer = container
         }
         
-        return try meowContainer.make(Future<Meow.Context>.self).flatMap { context in
+        let contextFuture: Future<Meow.Context>
+        if let context = try? meowContainer.make(Meow.Context.self) {
+            contextFuture = container.future(context)
+        } else {
+            contextFuture = try meowContainer.make(Future<Meow.Context>.self)
+        }
+        
+        return contextFuture.flatMap { context in
             return context.findOne(Self.self, where: "_id" == id).thenThrowing { instance in
                 guard let instance = instance else {
                     throw MeowVaporError.modelInParameterNotFound
@@ -68,7 +75,14 @@ public extension Model where Self: Parameter, Self.Identifier == String {
             meowContainer = container
         }
         
-        return try meowContainer.make(Future<Meow.Context>.self).flatMap { context in
+        let contextFuture: Future<Meow.Context>
+        if let context = try? meowContainer.make(Meow.Context.self) {
+            contextFuture = container.future(context)
+        } else {
+            contextFuture = try meowContainer.make(Future<Meow.Context>.self)
+        }
+        
+        return contextFuture.flatMap { context in
             return context.findOne(Self.self, where: "_id" == parameter).thenThrowing { instance in
                 guard let instance = instance else {
                     throw MeowVaporError.modelInParameterNotFound
